@@ -43,32 +43,7 @@
       "due": "2026-03-12"
     }
   ],
-  "projects": [
-    {
-      "id": 1,
-      "name": "PAH Web v1.1",
-      "desc": "Admin panel upgrade",
-      "progress": 78,
-      "status": "on-track",
-      "due": "2026-03-20"
-    },
-    {
-      "id": 3,
-      "name": "Data Migration",
-      "desc": "Legacy system transfer",
-      "progress": 60,
-      "status": "in-progress",
-      "due": "2026-04-01"
-    },
-    {
-      "id": 4,
-      "name": "Compliance Audit",
-      "desc": "Annual review prep",
-      "progress": 30,
-      "status": "overdue",
-      "due": "2026-03-05"
-    }
-  ],
+  "projects": [],
   "team": [
     {
       "id": 1,
@@ -106,5 +81,5 @@
       "color": "#455a64"
     }
   ],
-  "savedAt": "2026-03-09T20:02:39.779Z"
+  "savedAt": "2026-03-09T20:28:03.121Z"
 }
