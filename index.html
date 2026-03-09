@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>PAH – Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
+<style>
+:root{
+  --bg:#070d1a;--surface:#0c1526;--surface2:#111e35;
+  --border:rgba(56,139,253,0.18);--border2:rgba(56,139,253,0.08);
+  --blue:#388bfd;--blue-dim:rgba(56,139,253,0.12);
+  --gold:#f0c060;--green:#3fb950;--red:#f85149;
+  --silver:#8b949e;--text:#cdd9e5;--text-dim:#768390;
+  --glow:0 0 20px rgba(56,139,253,0.2);--glow-s:0 0 32px rgba(56,139,253,0.4);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);pointer-events:none;z-index:9999}
+
+/* ── TOPBAR ── */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:60px;flex-shrink:0;background:linear-gradient(90deg,#060c1a,#0a1428 50%,#060c1a);border-bottom:1px solid var(--border);position:relative;z-index:10}
+.topbar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--blue),transparent)}
+.brand{display:flex;align-items:center;gap:12px}
+.brand img{width:40px;height:40px;object-fit:contain;filter:drop-shadow(0 0 10px rgba(56,139,253,0.6));animation:logoPulse 3s ease-in-out infinite}
+@keyframes logoPulse{0%,100%{filter:drop-shadow(0 0 8px rgba(56,139,253,0.5))}50%{filter:drop-shadow(0 0 18px rgba(56,139,253,0.9))}}
+.brand-name{font-family:'Orbitron',monospace;font-size:1rem;font-weight:700;letter-spacing:2px;color:var(--blue);text-shadow:0 0 12px rgba(56,139,253,0.5)}
+.brand-sub{font-size:0.65rem;color:var(--text-dim);letter-spacing:3px;text-transform:uppercase;margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:16px}
+.user-chip{display:flex;align-items:center;gap:8px;padding:5px 14px 5px 6px;border-radius:30px;background:var(--surface2);border:1px solid var(--border);font-size:0.8rem;color:var(--text-dim)}
+.user-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#1565c0,var(--blue));display:grid;place-items:center;font-size:0.75rem;font-weight:700;color:#fff}
+.status-pill{display:flex;align-items:center;gap:6px;font-size:0.75rem;padding:4px 12px;border-radius:20px;border:1px solid;cursor:pointer;transition:all 0.2s;font-weight:500}
+.status-pill.off{border-color:rgba(248,81,73,0.4);color:var(--red);background:rgba(248,81,73,0.08)}
+.status-pill.on{border-color:rgba(63,185,80,0.4);color:var(--green);background:rgba(63,185,80,0.08)}
+.status-pill .dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+.status-pill.on .dot{box-shadow:0 0 6px currentColor;animation:blink 1.8s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.4}}
+
+/* ── LAYOUT ── */
+.layout{display:flex;flex:1;overflow:hidden}
+.sidebar{width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border2);display:flex;flex-direction:column;padding:16px 0;overflow-y:auto}
+.sidebar-section{padding:8px 16px 4px;font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);font-weight:600}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 20px;margin:1px 8px;border-radius:8px;font-size:0.85rem;color:var(--text-dim);cursor:pointer;transition:all 0.15s;border:1px solid transparent;user-select:none}
+.nav-item:hover{background:var(--blue-dim);color:var(--text);border-color:var(--border2)}
+.nav-item.active{background:rgba(56,139,253,0.15);color:var(--blue);border-color:rgba(56,139,253,0.25);font-weight:500}
+.nav-item .ni{font-size:1rem;width:18px;text-align:center}
+.nav-badge{margin-left:auto;font-size:0.65rem;padding:1px 7px;border-radius:10px;background:rgba(56,139,253,0.2);color:var(--blue);font-weight:700}
+.sidebar-divider{height:1px;background:var(--border2);margin:10px 16px}
+.sidebar-bottom{margin-top:auto}
+.content{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── PAGES ── */
+.page{display:none;flex:1;flex-direction:column;overflow:hidden;animation:fadeIn 0.2s ease}
+.page.active{display:flex}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.page-hdr{padding:14px 28px;border-bottom:1px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.page-hdr-left h2{font-family:'Orbitron',monospace;font-size:1rem;font-weight:700;letter-spacing:1px}
+.page-hdr-left p{font-size:0.75rem;color:var(--text-dim);margin-top:2px}
+.page-body{flex:1;overflow-y:auto;padding:22px 28px}
+.page-section{margin-bottom:28px}
+.page-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border2)}
+.page-section-head h3{font-family:'Orbitron',monospace;font-size:0.82rem;font-weight:600;letter-spacing:1px;color:var(--blue)}
+
+/* ── BADGES ── */
+.badge{font-size:0.65rem;padding:2px 8px;border-radius:10px;font-weight:700;letter-spacing:0.5px}
+.badge-blue{background:rgba(56,139,253,0.15);color:var(--blue);border:1px solid rgba(56,139,253,0.3)}
+.badge-green{background:rgba(63,185,80,0.12);color:var(--green);border:1px solid rgba(63,185,80,0.25)}
+.badge-gold{background:rgba(240,192,96,0.12);color:var(--gold);border:1px solid rgba(240,192,96,0.25)}
+.badge-red{background:rgba(248,81,73,0.12);color:var(--red);border:1px solid rgba(248,81,73,0.25)}
+.badge-silver{background:rgba(139,148,158,0.12);color:var(--silver);border:1px solid rgba(139,148,158,0.25)}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:8px;border:1.5px solid;font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;transition:all 0.18s}
+.btn-primary{border-color:var(--blue);background:rgba(56,139,253,0.15);color:var(--blue)}
+.btn-primary:hover{background:rgba(56,139,253,0.28);box-shadow:var(--glow)}
+.btn-danger{border-color:rgba(248,81,73,0.5);background:rgba(248,81,73,0.08);color:var(--red)}
+.btn-danger:hover{background:rgba(248,81,73,0.18)}
+.btn-ghost{border-color:var(--border);background:transparent;color:var(--text-dim)}
+.btn-ghost:hover{background:var(--blue-dim);color:var(--text);border-color:var(--border)}
+.btn-sm{padding:5px 11px;font-size:0.75rem;border-radius:6px}
+
+/* ── DATA TABLE ── */
+.data-table{width:100%;border-collapse:collapse;font-size:0.82rem}
+.data-table th{padding:9px 14px;text-align:left;font-size:0.68rem;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-dim);border-bottom:1px solid var(--border2);font-weight:600;white-space:nowrap}
+.data-table td{padding:10px 14px;border-bottom:1px solid var(--border2);color:var(--text);vertical-align:middle}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:rgba(56,139,253,0.04)}
+.actions-cell{display:flex;align-items:center;gap:6px}
+
+/* ── PROGRESS ── */
+.progress-bar{height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:4px;min-width:80px}
+.progress-fill{height:100%;border-radius:3px;transition:width 0.5s ease}
+
+/* ── KPI STRIP ── */
+.kpi-strip{display:flex;border-bottom:1px solid var(--border2);flex-shrink:0;overflow-x:auto}
+.kpi{flex:1;min-width:140px;padding:14px 22px;border-right:1px solid var(--border2);position:relative;overflow:hidden}
+.kpi:last-child{border-right:none}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kpi.b::before{background:linear-gradient(90deg,#1565c0,var(--blue))}.kpi.g::before{background:linear-gradient(90deg,#2ea043,var(--green))}.kpi.o::before{background:linear-gradient(90deg,#e65100,var(--gold))}.kpi.s::before{background:linear-gradient(90deg,#455a64,var(--silver))}
+.kpi-label{font-size:0.68rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim)}
+.kpi-val{font-family:'Orbitron',monospace;font-size:1.6rem;font-weight:700;line-height:1.2;margin:4px 0 2px}
+.kpi.b .kpi-val{color:var(--blue)}.kpi.g .kpi-val{color:var(--green)}.kpi.o .kpi-val{color:var(--gold)}.kpi.s .kpi-val{color:var(--silver)}
+.kpi-sub{font-size:0.7rem;color:var(--text-dim)}
+
+/* ── DASHBOARD PANELS ── */
+.dash-panels{display:flex;flex:1;overflow:hidden}
+.left-panel{width:300px;flex-shrink:0;border-right:1px solid var(--border2);display:flex;flex-direction:column;overflow:hidden}
+.panel-head{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border2);flex-shrink:0}
+.panel-head-title{font-size:0.8rem;font-weight:600;letter-spacing:0.5px;display:flex;align-items:center;gap:7px}
+.task-list-panel{flex:1;overflow-y:auto;padding:8px}
+.task-item-dash{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;margin-bottom:2px;border:1px solid transparent;transition:background 0.12s}
+.task-item-dash:hover{background:var(--blue-dim);border-color:var(--border2)}
+.task-cb{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--silver);flex-shrink:0;display:grid;place-items:center;cursor:pointer;transition:all 0.15s}
+.task-cb.done{background:var(--green);border-color:var(--green)}
+.task-cb.done::after{content:'✓';font-size:10px;color:#fff;font-weight:700}
+.task-name-d{flex:1;font-size:0.82rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.task-name-d.done{text-decoration:line-through;color:var(--text-dim)}
+.task-pri{font-size:0.65rem;padding:2px 7px;border-radius:8px;font-weight:700;flex-shrink:0}
+.pri-h{background:rgba(248,81,73,0.15);color:var(--red)}.pri-m{background:rgba(240,192,96,0.15);color:var(--gold)}.pri-l{background:rgba(63,185,80,0.12);color:var(--green)}
+
+/* ── ONEDRIVE ── */
+.right-panel{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.od-connect-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:40px;text-align:center}
+.od-connect-icon{font-size:4rem;opacity:0.25;margin-bottom:6px}
+.od-connect-screen h2{font-family:'Orbitron',monospace;font-size:1rem;color:var(--text-dim)}
+.od-connect-screen p{font-size:0.82rem;color:var(--text-dim);max-width:360px;line-height:1.75}
+.btn-connect{padding:12px 32px;border-radius:9px;border:1.5px solid var(--blue);background:rgba(56,139,253,0.12);color:var(--blue);font-family:'DM Sans',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:10px}
+.btn-connect:hover{background:rgba(56,139,253,0.22);box-shadow:var(--glow-s)}
+.ms-logo{width:18px;height:18px;display:grid;grid-template-columns:1fr 1fr;gap:2px;flex-shrink:0}
+.ms-logo span{border-radius:1px}
+.ms-logo span:nth-child(1){background:#f25022}.ms-logo span:nth-child(2){background:#7fba00}
+.ms-logo span:nth-child(3){background:#00a4ef}.ms-logo span:nth-child(4){background:#ffb900}
+.od-ui{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.od-toolbar{padding:10px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border2);flex-shrink:0;flex-wrap:wrap}
+.search-wrap{flex:1;min-width:180px;position:relative}
+.search-wrap input,.modal-input{width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.83rem;outline:none;transition:border-color 0.2s}
+.search-wrap input{padding-left:34px}
+.search-wrap input:focus,.modal-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(56,139,253,0.1)}
+.search-wrap input::placeholder,.modal-input::placeholder{color:var(--text-dim)}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:0.85rem;pointer-events:none}
+.od-view-btn{padding:7px 13px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--text-dim);cursor:pointer;font-size:0.85rem;transition:all 0.15s;font-family:'DM Sans',sans-serif}
+.od-view-btn:hover,.od-view-btn.active{background:var(--blue-dim);color:var(--blue);border-color:rgba(56,139,253,0.3)}
+.od-path{padding:8px 18px;font-size:0.75rem;color:var(--text-dim);border-bottom:1px solid var(--border2);flex-shrink:0;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.crumb{cursor:pointer;transition:color 0.15s;padding:2px 5px;border-radius:4px}
+.crumb:hover{color:var(--blue);background:var(--blue-dim)}
+.crumb.last{color:var(--text);cursor:default}
+.od-path-sep{opacity:0.3}
+.od-files{flex:1;overflow-y:auto;padding:14px 18px}
+.file-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px}
+.file-card{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 10px 12px;border-radius:10px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;transition:all 0.15s;text-align:center;position:relative}
+.file-card:hover{border-color:rgba(56,139,253,0.35);background:var(--blue-dim);box-shadow:var(--glow)}
+.file-card.selected{border-color:var(--blue);background:rgba(56,139,253,0.1)}
+.file-icon{font-size:2.2rem;line-height:1}
+.file-name{font-size:0.72rem;word-break:break-word;color:var(--text);line-height:1.3}
+.file-size{font-size:0.65rem;color:var(--text-dim)}
+.file-dl-btn{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:5px;background:rgba(56,139,253,0.2);border:1px solid rgba(56,139,253,0.3);color:var(--blue);font-size:0.75rem;display:none;place-items:center;cursor:pointer}
+.file-card:hover .file-dl-btn{display:grid}
+.file-star{position:absolute;top:6px;left:6px;width:22px;height:22px;border-radius:5px;background:rgba(240,192,96,0.1);border:1px solid rgba(240,192,96,0.2);color:#888;font-size:0.75rem;display:none;place-items:center;cursor:pointer;transition:all 0.15s;line-height:1}
+.file-card:hover .file-star{display:grid}
+.file-star.starred{display:grid!important;color:var(--gold);background:rgba(240,192,96,0.2);border-color:rgba(240,192,96,0.4)}
+.file-star:hover{background:rgba(240,192,96,0.25);border-color:rgba(240,192,96,0.5);color:var(--gold)}
+/* list view star */
+.file-row .rs-star{width:26px;height:26px;border-radius:6px;flex-shrink:0;background:transparent;border:1px solid transparent;color:#556;font-size:0.85rem;display:grid;place-items:center;cursor:pointer;transition:all 0.15s;opacity:0}
+.file-row:hover .rs-star{opacity:1;border-color:rgba(240,192,96,0.3);background:rgba(240,192,96,0.08);color:var(--gold)}
+.file-row .rs-star.starred{opacity:1!important;color:var(--gold);background:rgba(240,192,96,0.15);border-color:rgba(240,192,96,0.35)}
+/* mobile always show */
+@media(max-width:768px){.file-star{display:grid!important}.file-row .rs-star{opacity:1!important}}
+.file-list-view{display:flex;flex-direction:column;gap:2px}
+.file-row{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:7px;border:1px solid transparent;cursor:pointer;transition:all 0.12s}
+.file-row:hover{background:var(--blue-dim);border-color:var(--border2)}
+.file-row .ri{font-size:1.2rem;width:24px;text-align:center;flex-shrink:0}
+.file-row .rn{flex:1;font-size:0.82rem;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-row .rm{font-size:0.72rem;color:var(--text-dim);width:90px;text-align:right;flex-shrink:0}
+.file-row .rs{font-size:0.72rem;color:var(--text-dim);width:65px;text-align:right;flex-shrink:0}
+.file-row .rd{width:26px;height:26px;border-radius:6px;flex-shrink:0;background:rgba(56,139,253,0.15);border:1px solid rgba(56,139,253,0.25);color:var(--blue);font-size:0.8rem;display:grid;place-items:center;cursor:pointer;opacity:0;transition:opacity 0.15s}
+.file-row:hover .rd{opacity:1}
+.od-statusbar{padding:7px 18px;border-top:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;font-size:0.7rem;color:var(--text-dim);flex-shrink:0;background:var(--surface)}
+.od-statusbar .conn-info{display:flex;align-items:center;gap:6px}
+.od-statusbar .dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green)}
+.od-state-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:40px;text-align:center;color:var(--text-dim)}
+.err-detail{font-size:0.72rem;color:var(--red);background:rgba(248,81,73,0.08);padding:8px 14px;border-radius:6px;border:1px solid rgba(248,81,73,0.2);max-width:400px;word-break:break-word}
+.btn-retry{padding:9px 24px;border-radius:8px;border:1px solid var(--blue);background:var(--blue-dim);color:var(--blue);font-family:'DM Sans',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer}
+
+/* ── TEAM MEMBER CARD ── */
+.team-card{display:flex;align-items:center;gap:14px;padding:12px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;margin-bottom:8px;transition:all 0.15s}
+.team-card:hover{border-color:rgba(56,139,253,0.25);box-shadow:var(--glow)}
+.av{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-size:0.82rem;font-weight:700;color:#fff;flex-shrink:0}
+.av-info{flex:1;min-width:0}
+.av-name{font-size:0.88rem;font-weight:600}
+.av-role{font-size:0.72rem;color:var(--text-dim)}
+.av-status{font-size:0.7rem;padding:2px 9px;border-radius:10px;flex-shrink:0}
+.av-status.online{background:rgba(63,185,80,0.12);color:var(--green)}
+.av-status.away{background:rgba(240,192,96,0.12);color:var(--gold)}
+.av-status.offline{background:rgba(139,148,158,0.12);color:var(--silver)}
+
+/* ── PROJECT CARD ── */
+.project-card{background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:18px;margin-bottom:10px;transition:all 0.15s}
+.project-card:hover{border-color:rgba(56,139,253,0.25);box-shadow:var(--glow)}
+.project-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
+.project-card-title{font-weight:600;font-size:0.9rem}
+.project-card-desc{font-size:0.75rem;color:var(--text-dim);margin-top:2px}
+.project-card-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:10px;font-size:0.72rem;color:var(--text-dim)}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:460px;box-shadow:var(--glow-s);animation:fadeIn 0.2s ease}
+.modal-title{font-family:'Orbitron',monospace;font-size:0.95rem;font-weight:700;margin-bottom:20px;color:var(--text);display:flex;align-items:center;gap:9px}
+.modal-field{margin-bottom:14px}
+.modal-field label{display:block;font-size:0.75rem;color:var(--text-dim);margin-bottom:5px;letter-spacing:0.3px}
+.modal-input{display:block}
+.modal-input option{background:var(--surface2)}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}
+
+/* ── CONFIRM MODAL ── */
+.confirm-modal{max-width:360px;text-align:center}
+.confirm-modal .confirm-icon{font-size:2.5rem;margin-bottom:10px;opacity:0.8}
+.confirm-modal p{font-size:0.85rem;color:var(--text-dim);line-height:1.6;margin-bottom:4px}
+.confirm-modal .confirm-name{font-weight:600;color:var(--text)}
+
+/* ── MISC ── */
+.spinner{width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.od-loading-inline{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:60px;color:var(--text-dim);font-size:0.85rem}
+.no-results{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:10px;color:var(--text-dim);font-size:0.85rem;padding:60px;text-align:center}
+.no-results span{font-size:2.5rem;opacity:0.3}
+.empty-state{text-align:center;padding:50px 20px;color:var(--text-dim)}
+.empty-state span{font-size:2.5rem;display:block;margin-bottom:10px;opacity:0.3}
+.empty-state p{font-size:0.85rem}
+.toast{position:fixed;bottom:24px;right:24px;padding:10px 18px;border-radius:8px;background:#1a2740;border:1px solid var(--blue);color:var(--text);font-size:0.8rem;font-weight:500;box-shadow:var(--glow-s);z-index:9998;transform:translateY(20px);opacity:0;transition:all 0.3s;pointer-events:none;max-width:320px}
+.toast.show{transform:translateY(0);opacity:1}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(56,139,253,0.2);border-radius:3px}
+.chart-bars{display:flex;align-items:flex-end;gap:10px;height:120px;padding:10px 0}
+.bar-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1}
+.bar{width:100%;border-radius:4px 4px 0 0;min-height:4px}
+.bar-label{font-size:0.68rem;color:var(--text-dim)}
+.bar-val{font-size:0.7rem;color:var(--text);font-weight:600}
+.settings-group{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:18px;margin-bottom:16px}
+.settings-group label{display:block;font-size:0.78rem;color:var(--text-dim);margin-bottom:5px;margin-top:12px}
+.settings-group label:first-child{margin-top:0}
+.settings-toggle{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border2)}
+.settings-toggle:last-child{border-bottom:none;padding-bottom:0}
+.toggle-label{font-size:0.85rem}.toggle-desc{font-size:0.72rem;color:var(--text-dim);margin-top:2px}
+.toggle-sw{width:38px;height:20px;border-radius:10px;background:var(--border);cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0}
+.toggle-sw.on{background:var(--blue)}
+.toggle-sw::after{content:'';position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform 0.2s}
+.toggle-sw.on::after{transform:translateX(18px)}
+
+/* ══════════════════════════════
+   MOBILE RESPONSIVE
+══════════════════════════════ */
+
+/* Hamburger button */
+.hamburger{display:none;flex-direction:column;justify-content:center;gap:5px;width:38px;height:38px;cursor:pointer;padding:6px;border-radius:8px;border:1px solid var(--border);background:transparent;flex-shrink:0}
+.hamburger span{display:block;height:2px;background:var(--text);border-radius:2px;transition:all 0.25s}
+.hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.hamburger.open span:nth-child(2){opacity:0;transform:scaleX(0)}
+.hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
+/* Sidebar overlay for mobile */
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:199;backdrop-filter:blur(2px)}
+.sidebar-overlay.open{display:block}
+
+/* Bottom nav bar for mobile */
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:150;background:var(--surface);border-top:1px solid var(--border);padding:6px 0 max(6px,env(safe-area-inset-bottom));flex-shrink:0}
+.bottom-nav-inner{display:flex;align-items:center;justify-content:space-around}
+.bn-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 10px;border-radius:10px;cursor:pointer;transition:all 0.15s;min-width:52px;border:none;background:transparent;color:var(--text-dim);font-family:'DM Sans',sans-serif}
+.bn-item.active{color:var(--blue)}
+.bn-item .bn-icon{font-size:1.3rem;line-height:1}
+.bn-item .bn-label{font-size:0.6rem;letter-spacing:0.3px;font-weight:600;text-transform:uppercase}
+.bn-badge{position:absolute;top:-2px;right:-4px;background:var(--blue);color:#fff;font-size:0.55rem;font-weight:700;padding:1px 4px;border-radius:8px;line-height:1.4}
+.bn-item-wrap{position:relative;display:flex;align-items:center;justify-content:center}
+
+@media (max-width: 768px) {
+  /* show hamburger, hide desktop sidebar */
+  .hamburger{display:flex}
+  html,body{overflow:hidden}
+
+  /* Sidebar becomes a slide-in drawer */
+  .sidebar{
+    position:fixed;top:0;left:0;bottom:0;z-index:200;
+    width:260px;
+    transform:translateX(-100%);
+    transition:transform 0.28s cubic-bezier(0.4,0,0.2,1);
+    box-shadow:4px 0 24px rgba(0,0,0,0.5);
+    padding-top:70px;
+  }
+  .sidebar.open{transform:translateX(0)}
+
+  /* Topbar tweaks */
+  .topbar{padding:0 14px;height:56px}
+  .brand-sub{display:none}
+  .brand-name{font-size:0.85rem;letter-spacing:1.5px}
+  .brand img{width:34px;height:34px}
+  .status-pill span{display:none} /* hide text, keep dot */
+  .status-pill{padding:6px 8px}
+  .user-chip span{display:none}
+  .user-chip{padding:4px}
+
+  /* Layout: no sidebar column */
+  .layout{flex-direction:column}
+  .content{overflow:hidden}
+
+  /* Pages scroll freely, add bottom padding for nav bar */
+  .page{overflow:hidden}
+  .page-body{padding:16px;padding-bottom:80px}
+  .page-hdr{padding:12px 16px;flex-wrap:wrap;gap:8px}
+
+  /* KPI strip: 2x2 grid on mobile */
+  .kpi-strip{display:grid;grid-template-columns:1fr 1fr;overflow:visible}
+  .kpi{border-right:none;border-bottom:1px solid var(--border2);padding:12px 14px;min-width:unset}
+  .kpi:nth-child(1),.kpi:nth-child(2){border-right:1px solid var(--border2)}
+  .kpi:nth-child(3),.kpi:nth-child(4){border-bottom:none}
+  .kpi:nth-child(odd){border-right:1px solid var(--border2)}
+  .kpi-val{font-size:1.3rem}
+
+  /* Dashboard: stack panels vertically */
+  .dash-panels{flex-direction:column;overflow-y:auto;overflow-x:hidden;padding-bottom:72px}
+  .left-panel{width:100%;border-right:none;border-bottom:1px solid var(--border2);max-height:340px}
+  .right-panel{min-height:300px}
+
+  /* Tables: horizontal scroll */
+  .page-section{overflow-x:auto}
+  .data-table{min-width:520px}
+  .data-table th,.data-table td{padding:8px 10px}
+
+  /* Project cards: full width */
+  .project-card{margin-bottom:10px}
+  .project-card-top{flex-wrap:wrap;gap:8px}
+
+  /* Team cards */
+  .team-card{flex-wrap:wrap;gap:10px}
+  .team-card .btn{padding:6px 10px;font-size:0.72rem}
+
+  /* Modals */
+  .modal{margin:16px;max-width:calc(100vw - 32px);max-height:calc(100vh - 80px);overflow-y:auto}
+  .modal-overlay{align-items:flex-end;padding-bottom:0}
+  .modal{border-radius:16px 16px 0 0;margin:0;max-width:100%;width:100%;animation:slideUp 0.25s ease}
+  @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  .confirm-modal{border-radius:16px 16px 0 0}
+
+  /* OneDrive toolbar wrap */
+  .od-toolbar{padding:8px 12px;gap:8px}
+  .od-toolbar .od-view-btn{padding:6px 10px;font-size:0.8rem}
+  .od-files{padding:10px 12px;padding-bottom:80px}
+
+  /* File grid tighter */
+  .file-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
+  .file-card{padding:12px 8px 10px}
+  .file-icon{font-size:1.8rem}
+  .file-name{font-size:0.68rem}
+  .file-dl-btn{display:grid!important} /* always show download on mobile */
+
+  /* Bottom nav visible */
+  .bottom-nav{display:block}
+
+  /* Toast above bottom nav */
+  .toast{bottom:80px}
+
+  /* Reports chart */
+  .chart-bars{height:90px}
+
+  /* Page header button sizing */
+  .btn{min-height:38px;padding:8px 14px}
+  .btn-sm{min-height:32px;padding:5px 10px}
+
+  /* Task item bigger touch targets */
+  .task-item-dash{padding:12px 10px;min-height:48px}
+  .task-cb{width:20px;height:20px}
+}
+
+@media (max-width: 380px) {
+  .kpi-val{font-size:1.1rem}
+  .file-grid{grid-template-columns:repeat(3,1fr)}
+  .bottom-nav-inner{gap:0}
+  .bn-item{min-width:44px;padding:5px 6px}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand">
+    <button class="hamburger" id="hamburger" onclick="toggleSidebar()" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+    <img src="PAH_logo_with_3D_design.png" alt="PAH" onerror="this.style.display='none'"/>
+    <div><div class="brand-name">PAH</div><div class="brand-sub">Admin Panel</div></div>
+  </div>
+  <div class="topbar-right">
+    <div class="status-pill off" id="od-pill" onclick="pillClick()">
+      <div class="dot"></div><span id="od-pill-label">OneDrive: Disconnected</span>
+    </div>
+    <div class="user-chip">
+      <div class="user-avatar" id="user-avatar">AD</div>
+      <span id="user-name">Admin</span>
+    </div>
+  </div>
+</div>
+<!-- Mobile sidebar overlay -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-section">Workspace</div>
+    <div class="nav-item active" id="nav-dashboard" onclick="goTo('dashboard')"><span class="ni">🗂</span> Dashboard</div>
+    <div class="nav-item" id="nav-projects" onclick="goTo('projects')"><span class="ni">📋</span> Projects <span class="nav-badge" id="nb-projects">0</span></div>
+    <div class="nav-item" id="nav-tasks" onclick="goTo('tasks')"><span class="ni">✅</span> Tasks <span class="nav-badge" id="nb-tasks">0</span></div>
+    <div class="nav-item" id="nav-team" onclick="goTo('team')"><span class="ni">👥</span> Team <span class="nav-badge" id="nb-team">0</span></div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">Files</div>
+    <div class="nav-item" id="nav-onedrive" onclick="goTo('onedrive')"><span class="ni">☁️</span> OneDrive</div>
+    <div class="nav-item" id="nav-reports" onclick="goTo('reports')"><span class="ni">📊</span> Reports</div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">System</div>
+    <div class="nav-item" id="nav-settings" onclick="goTo('settings')"><span class="ni">⚙️</span> Settings</div>
+    <div class="sidebar-bottom">
+      <div class="sidebar-divider"></div>
+      <div class="nav-item" onclick="pillClick()"><span class="ni">🔓</span><span id="sidebar-od-label">Connect OneDrive</span></div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ══ DASHBOARD ══ -->
+    <div class="page active" id="page-dashboard">
+      <div class="kpi-strip">
+        <div class="kpi b"><div class="kpi-label">Projects</div><div class="kpi-val" id="kpi-proj">0</div><div class="kpi-sub">Active</div></div>
+        <div class="kpi g"><div class="kpi-label">Tasks Done</div><div class="kpi-val" id="kpi-done">0</div><div class="kpi-sub">of <span id="kpi-total">0</span> total</div></div>
+        <div class="kpi o"><div class="kpi-label">Team Members</div><div class="kpi-val" id="kpi-team">0</div><div class="kpi-sub">Total</div></div>
+        <div class="kpi s"><div class="kpi-label">OneDrive Files</div><div class="kpi-val" id="kpi-files">–</div><div class="kpi-sub" id="kpi-files-sub">Not connected</div></div>
+      </div>
+      <div class="dash-panels">
+        <div class="left-panel">
+          <div class="panel-head">
+            <div class="panel-head-title">✅ Tasks <span class="badge badge-blue" id="dash-task-count">0</span></div>
+            <button class="btn btn-primary btn-sm" onclick="openTaskModal()">+ Add</button>
+          </div>
+          <div class="task-list-panel" id="dash-task-list"></div>
+        </div>
+        <div class="right-panel" id="od-right">
+          <div id="s-connect" class="od-connect-screen">
+            <div class="od-connect-icon">☁️</div>
+            <h2>Connect Your OneDrive</h2>
+            <p>Sign in with your Microsoft account to browse, search, and download your real OneDrive files.</p>
+            <button class="btn-connect" onclick="msalSignIn()">
+              <div class="ms-logo"><span></span><span></span><span></span><span></span></div>
+              Sign in with Microsoft
+            </button>
+          </div>
+          <div id="s-loading" class="od-state-screen" style="display:none"><div class="spinner"></div><p id="s-loading-text">Connecting…</p></div>
+          <div id="s-error" class="od-state-screen" style="display:none">
+            <div style="font-size:2.5rem;opacity:.4">⚠️</div><p>Could not connect.</p>
+            <div class="err-detail" id="s-error-detail"></div>
+            <button class="btn-retry" onclick="msalSignIn()">Try Again</button>
+          </div>
+          <div id="s-ui" class="od-ui" style="display:none">
+            <div class="panel-head">
+              <div class="panel-head-title">☁️ OneDrive <span class="badge badge-green">● Live</span></div>
+              <button class="od-view-btn" onclick="msalSignOut()">Sign Out</button>
+            </div>
+            <div class="od-toolbar">
+              <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="od-search" placeholder="Search OneDrive…" oninput="onSearch(this.value)"/></div>
+              <button class="od-view-btn active" id="btn-grid" onclick="setView('grid')">⊞</button>
+              <button class="od-view-btn" id="btn-list" onclick="setView('list')">☰</button>
+              <button class="od-view-btn" onclick="refreshFiles()">↻</button>
+            </div>
+            <div class="od-path" id="od-path"></div>
+            <div class="od-files" id="od-files"></div>
+            <div class="od-statusbar"><div class="conn-info"><div class="dot"></div><span id="od-account-lbl">–</span></div><span id="od-count-lbl">–</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PROJECTS ══ -->
+    <div class="page" id="page-projects">
+      <div class="page-hdr">
+        <div class="page-hdr-left"><h2>📋 Projects</h2><p>Add, edit or remove projects</p></div>
+        <button class="btn btn-primary" onclick="openProjectModal()">＋ New Project</button>
+      </div>
+      <div class="page-body">
+        <div class="page-section">
+          <div id="projects-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ TASKS ══ -->
+    <div class="page" id="page-tasks">
+      <div class="page-hdr">
+        <div class="page-hdr-left"><h2>✅ Tasks</h2><p>Add, edit or remove tasks</p></div>
+        <button class="btn btn-primary" onclick="openTaskModal()">＋ New Task</button>
+      </div>
+      <div class="page-body">
+        <div class="page-section">
+          <table class="data-table">
+            <thead><tr><th>Task</th><th>Priority</th><th>Status</th><th>Due Date</th><th>Actions</th></tr></thead>
+            <tbody id="tasks-tbody"></tbody>
+          </table>
+          <div id="tasks-empty" class="empty-state" style="display:none"><span>✅</span><p>No tasks yet. Click "+ New Task" to add one.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ TEAM ══ -->
+    <div class="page" id="page-team">
+      <div class="page-hdr">
+        <div class="page-hdr-left"><h2>👥 Team</h2><p>Add, edit or remove team members</p></div>
+        <button class="btn btn-primary" onclick="openTeamModal()">＋ Add Member</button>
+      </div>
+      <div class="page-body">
+        <div class="page-section">
+          <div id="team-list"></div>
+          <div id="team-empty" class="empty-state" style="display:none"><span>👥</span><p>No team members yet. Click "+ Add Member" to add one.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ ONEDRIVE ══ -->
+    <div class="page" id="page-onedrive">
+      <div class="page-hdr">
+        <div class="page-hdr-left"><h2>☁️ OneDrive</h2><p>Browse your cloud files</p></div>
+        <span class="badge badge-green" id="od-full-badge" style="display:none">● Live</span>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+        <div id="sf-connect" class="od-connect-screen">
+          <div class="od-connect-icon">☁️</div><h2>Connect Your OneDrive</h2>
+          <p>Sign in with Microsoft to browse all your files.</p>
+          <button class="btn-connect" onclick="msalSignIn()"><div class="ms-logo"><span></span><span></span><span></span><span></span></div>Sign in with Microsoft</button>
+        </div>
+        <div id="sf-ui" class="od-ui" style="display:none">
+          <div class="od-toolbar">
+            <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="sf-search" placeholder="Search OneDrive…" oninput="onSearch(this.value,true)"/></div>
+            <button class="od-view-btn active" id="sf-btn-grid" onclick="setView('grid',true)">⊞ Grid</button>
+            <button class="od-view-btn" id="sf-btn-list" onclick="setView('list',true)">☰ List</button>
+            <button class="od-view-btn" onclick="refreshFiles(true)">↻</button>
+            <button class="od-view-btn" onclick="msalSignOut()" style="border-color:rgba(248,81,73,0.3);color:var(--red)">Sign Out</button>
+          </div>
+          <div class="od-path" id="sf-path"></div>
+          <div class="od-files" id="sf-files"></div>
+          <div class="od-statusbar"><div class="conn-info"><div class="dot"></div><span id="sf-account-lbl">–</span></div><span id="sf-count-lbl">–</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ REPORTS ══ -->
+    <div class="page" id="page-reports">
+      <div class="page-hdr"><div class="page-hdr-left"><h2>📊 Reports</h2><p>Performance overview</p></div><span class="badge badge-blue">March 2026</span></div>
+      <div class="page-body">
+        <div class="page-section"><div class="page-section-head"><h3>Tasks Completed — Last 7 Days</h3></div><div class="chart-bars" id="chart-tasks"></div></div>
+        <div class="page-section">
+          <div class="page-section-head"><h3>Project Progress</h3></div>
+          <div id="reports-projects"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SETTINGS ══ -->
+    <div class="page" id="page-settings">
+      <div class="page-hdr"><div class="page-hdr-left"><h2>⚙️ Settings</h2><p>Configure your preferences</p></div></div>
+      <div class="page-body">
+        <div class="page-section"><div class="page-section-head"><h3>Profile</h3></div>
+          <div class="settings-group">
+            <label>Display Name</label><input class="modal-input" type="text" id="set-name" value="Admin User"/>
+            <label>Email</label><input class="modal-input" type="text" id="set-email" placeholder="your@email.com"/>
+            <label>Role</label><select class="modal-input"><option>Administrator</option><option>Project Manager</option><option>Viewer</option></select>
+            <button class="btn btn-primary" style="margin-top:14px" onclick="toast('✅ Profile saved')">Save Changes</button>
+          </div>
+        </div>
+        <div class="page-section"><div class="page-section-head"><h3>Preferences</h3></div>
+          <div class="settings-group">
+            <div class="settings-toggle"><div><div class="toggle-label">OneDrive Auto-connect</div><div class="toggle-desc">Reconnect automatically on load</div></div><div class="toggle-sw on" onclick="this.classList.toggle('on')"></div></div>
+            <div class="settings-toggle"><div><div class="toggle-label">Desktop Notifications</div><div class="toggle-desc">Alerts for task deadlines</div></div><div class="toggle-sw" onclick="this.classList.toggle('on')"></div></div>
+          </div>
+        </div>
+        <div class="page-section"><div class="page-section-head"><h3>OneDrive</h3></div>
+          <div class="settings-group">
+            <label>Connection Status</label>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
+              <div class="status-pill off" id="set-od-pill" style="cursor:default;font-size:0.78rem"><div class="dot"></div><span id="set-od-status">Disconnected</span></div>
+              <button class="btn btn-ghost btn-sm" onclick="pillClick()">Manage</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /layout -->
+
+<!-- ══ TASK MODAL ══ -->
+<div class="modal-overlay" id="task-modal">
+  <div class="modal">
+    <div class="modal-title"><span id="task-modal-icon">✅</span><span id="task-modal-title">New Task</span></div>
+    <input type="hidden" id="task-edit-id"/>
+    <div class="modal-field"><label>Task Name *</label><input class="modal-input" id="task-name" placeholder="Enter task name…"/></div>
+    <div class="modal-field"><label>Priority</label>
+      <select class="modal-input" id="task-pri">
+        <option value="h">High</option><option value="m" selected>Medium</option><option value="l">Low</option>
+      </select>
+    </div>
+    <div class="modal-field"><label>Due Date</label><input class="modal-input" type="date" id="task-due"/></div>
+    <div class="modal-field"><label>Status</label>
+      <select class="modal-input" id="task-status">
+        <option value="false">Pending</option><option value="true">Done</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('task-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveTask()">Save Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PROJECT MODAL ══ -->
+<div class="modal-overlay" id="project-modal">
+  <div class="modal">
+    <div class="modal-title"><span id="proj-modal-icon">📋</span><span id="proj-modal-title">New Project</span></div>
+    <input type="hidden" id="proj-edit-id"/>
+    <input type="hidden" id="proj-od-folder-id"/>
+    <div class="modal-field"><label>Project Name *</label><input class="modal-input" id="proj-name" placeholder="Enter project name…"/></div>
+    <div class="modal-field"><label>Description</label><input class="modal-input" id="proj-desc" placeholder="Short description…"/></div>
+    <div class="modal-field"><label>Progress (0–100)</label><input class="modal-input" type="number" id="proj-progress" min="0" max="100" value="0"/></div>
+    <div class="modal-field"><label>Status</label>
+      <select class="modal-input" id="proj-status">
+        <option value="on-track">On Track</option><option value="at-risk">At Risk</option>
+        <option value="in-progress">In Progress</option><option value="overdue">Overdue</option><option value="done">Done</option>
+      </select>
+    </div>
+    <div class="modal-field"><label>Due Date</label><input class="modal-input" type="date" id="proj-due"/></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('project-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveProject()">Save Project</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TEAM MODAL ══ -->
+<div class="modal-overlay" id="team-modal">
+  <div class="modal">
+    <div class="modal-title"><span id="team-modal-icon">👤</span><span id="team-modal-title">Add Member</span></div>
+    <input type="hidden" id="team-edit-id"/>
+    <div class="modal-field"><label>Full Name *</label><input class="modal-input" id="team-name" placeholder="First Last…"/></div>
+    <div class="modal-field"><label>Role / Title</label><input class="modal-input" id="team-role" placeholder="e.g. Developer, Designer…"/></div>
+    <div class="modal-field"><label>Status</label>
+      <select class="modal-input" id="team-status">
+        <option value="online">Online</option><option value="away">Away</option><option value="offline">Offline</option>
+      </select>
+    </div>
+    <div class="modal-field"><label>Avatar Colour</label>
+      <select class="modal-input" id="team-color">
+        <option value="#1565c0">Blue</option><option value="#2e7d32">Green</option><option value="#e65100">Orange</option>
+        <option value="#6a1b9a">Purple</option><option value="#c62828">Red</option><option value="#00838f">Teal</option><option value="#455a64">Slate</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('team-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveMember()">Save Member</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CONFIRM DELETE ══ -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal confirm-modal">
+    <div class="confirm-icon">🗑️</div>
+    <p>Delete <span class="confirm-name" id="confirm-name"></span>?</p>
+    <p style="font-size:0.78rem;margin-top:4px">This cannot be undone.</p>
+    <div class="modal-footer" style="justify-content:center">
+      <button class="btn btn-ghost" onclick="closeModal('confirm-modal')">Cancel</button>
+      <button class="btn btn-danger" id="confirm-yes">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Mobile bottom navigation -->
+<nav class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <button class="bn-item active" id="bn-dashboard" onclick="goTo('dashboard');closeSidebar()">
+      <div class="bn-item-wrap"><span class="bn-icon">&#128193;</span></div>
+      <span class="bn-label">Home</span>
+    </button>
+    <button class="bn-item" id="bn-tasks" onclick="goTo('tasks');closeSidebar()">
+      <div class="bn-item-wrap"><span class="bn-icon">&#9989;</span><span class="bn-badge" id="bnb-tasks">0</span></div>
+      <span class="bn-label">Tasks</span>
+    </button>
+    <button class="bn-item" id="bn-projects" onclick="goTo('projects');closeSidebar()">
+      <div class="bn-item-wrap"><span class="bn-icon">&#128203;</span></div>
+      <span class="bn-label">Projects</span>
+    </button>
+    <button class="bn-item" id="bn-team" onclick="goTo('team');closeSidebar()">
+      <div class="bn-item-wrap"><span class="bn-icon">&#128101;</span></div>
+      <span class="bn-label">Team</span>
+    </button>
+    <button class="bn-item" id="bn-onedrive" onclick="goTo('onedrive');closeSidebar()">
+      <div class="bn-item-wrap"><span class="bn-icon">&#9729;&#65039;</span></div>
+      <span class="bn-label">Drive</span>
+    </button>
+  </div>
+</nav>
+
+<script>
+/* ══ GITHUB PERSISTENCE ══ */
+const GH = {
+  owner: 'pmirzapanah-hub',
+  repo:  'PAH-Web-1.1.0',
+  file:  'data.json',
+  token: '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',
+  branch:'main'
+};
+
+async function loadFromGitHub(){
+  try{
+    const url=`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.file}`;
+    const r=await fetch(url,{headers:{Authorization:`token ${GH.token}`,Accept:'application/vnd.github.v3+json'}});
+    if(r.status===404){console.log('No data.json yet on GitHub — will create on first save.');return false;}
+    if(!r.ok) throw new Error('GitHub load failed: '+r.status);
+    const j=await r.json();
+    const decoded=JSON.parse(atob(j.content.split('\n').join('')));
+    if(decoded.tasks)   TASKS    = decoded.tasks;
+    if(decoded.projects)PROJECTS = decoded.projects;
+    if(decoded.team)    TEAM     = decoded.team;
+    // store sha for updates
+    window._ghSha = j.sha;
+    console.log('✅ Data loaded from GitHub');
+    return true;
+  }catch(e){
+    console.warn('GitHub load error:',e.message);
+    return false;
+  }
+}
+
+async function saveToGitHub(){
+  try{
+    const payload={tasks:TASKS,projects:PROJECTS,team:TEAM,savedAt:new Date().toISOString()};
+    const encoded=btoa(unescape(encodeURIComponent(JSON.stringify(payload,null,2))));
+    const url=`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.file}`;
+    const body={message:'PAH data update '+new Date().toLocaleString(),content:encoded,branch:GH.branch};
+    if(window._ghSha) body.sha=window._ghSha;
+    const r=await fetch(url,{method:'PUT',headers:{Authorization:`token ${GH.token}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!r.ok){const e=await r.json();throw new Error(e.message||r.status);}
+    const j=await r.json();
+    window._ghSha=j.content.sha;
+    toast('☁️ Saved to GitHub');
+  }catch(e){
+    console.warn('GitHub save error:',e.message);
+    toast('⚠️ GitHub save failed: '+e.message);
+  }
+}
+
+/* ══ MSAL ══ */
+const msalConfig={auth:{clientId:'b2254255-5b58-4bc1-8144-e2d54b26327b',authority:'https://login.microsoftonline.com/common',redirectUri:window.location.origin+window.location.pathname},cache:{cacheLocation:'sessionStorage',storeAuthStateInCookie:false}};
+const SCOPES=['Files.Read','Files.ReadWrite','User.Read'];
+let msalApp=null,token=null,odView='grid',odPath=[{id:'root',name:'🏠 My Drive'}],selId=null,sTimer=null;
+
+/* ══ DATA — loaded from localStorage or defaults ══ */
+function loadData(){
+  try{
+    TASKS   = JSON.parse(localStorage.getItem('pah_tasks'))   || defaultTasks();
+    PROJECTS= JSON.parse(localStorage.getItem('pah_projects'))|| defaultProjects();
+    TEAM    = JSON.parse(localStorage.getItem('pah_team'))    || defaultTeam();
+  }catch(e){ TASKS=defaultTasks(); PROJECTS=defaultProjects(); TEAM=defaultTeam(); }
+}
+function save(){ localStorage.setItem('pah_tasks',JSON.stringify(TASKS)); localStorage.setItem('pah_projects',JSON.stringify(PROJECTS)); localStorage.setItem('pah_team',JSON.stringify(TEAM)); }
+
+let TASKS=[], PROJECTS=[], TEAM=[];
+
+function defaultTasks(){return[
+  {id:1,name:'Review Q1 budget report',done:true,pri:'h',due:'2026-03-09'},
+  {id:2,name:'Send stakeholder update',done:false,pri:'h',due:'2026-03-09'},
+  {id:3,name:'Update project timeline',done:false,pri:'m',due:'2026-03-10'},
+  {id:4,name:'Schedule team stand-up',done:true,pri:'l',due:'2026-03-09'},
+  {id:5,name:'Prepare compliance checklist',done:false,pri:'m',due:'2026-03-11'},
+  {id:6,name:'Archive sprint files',done:false,pri:'l',due:'2026-03-12'},
+];}
+function defaultProjects(){return[
+  {id:1,name:'PAH Web v1.1',desc:'Admin panel upgrade',progress:78,status:'on-track',due:'2026-03-20'},
+  {id:2,name:'Client Portal',desc:'External client access',progress:45,status:'at-risk',due:'2026-03-15'},
+  {id:3,name:'Data Migration',desc:'Legacy system transfer',progress:60,status:'in-progress',due:'2026-04-01'},
+  {id:4,name:'Compliance Audit',desc:'Annual review prep',progress:30,status:'overdue',due:'2026-03-05'},
+];}
+function defaultTeam(){return[
+  {id:1,name:'Alice Morgan',role:'Project Manager',status:'online',color:'#1565c0'},
+  {id:2,name:'Ben Carter',role:'Developer',status:'online',color:'#2e7d32'},
+  {id:3,name:'Clara Lee',role:'Designer',status:'away',color:'#e65100'},
+  {id:4,name:'David Park',role:'QA Engineer',status:'online',color:'#6a1b9a'},
+  {id:5,name:'Emma Wilson',role:'Business Analyst',status:'offline',color:'#455a64'},
+];}
+
+let nextId={task:100,project:100,team:100};
+
+/* ══ INIT ══ */
+window.addEventListener('DOMContentLoaded',async()=>{
+  loadData(); // load localStorage first as fallback
+  renderAll();
+  // Try GitHub first, fallback to localStorage
+  const ghLoaded = await loadFromGitHub();
+  if(ghLoaded){ save(); renderAll(); } // sync GitHub data into localStorage
+  try{
+    msalApp=new msal.PublicClientApplication(msalConfig);
+    await msalApp.initialize();
+    const resp=await msalApp.handleRedirectPromise();
+    if(resp?.accessToken){token=resp.accessToken;await afterSignIn(resp.account);return;}
+    const accounts=msalApp.getAllAccounts();
+    if(accounts.length) await silentLogin(accounts[0]);
+  }catch(e){console.error(e);}
+});
+
+/* ══ SIDEBAR TOGGLE (mobile) ══ */
+function toggleSidebar(){
+  const sb=document.getElementById('sidebar');
+  const ov=document.getElementById('sidebar-overlay');
+  const hb=document.getElementById('hamburger');
+  const open=sb.classList.toggle('open');
+  ov.classList.toggle('open',open);
+  hb.classList.toggle('open',open);
+}
+function closeSidebar(){
+  const sb=document.getElementById('sidebar');
+  if(!sb.classList.contains('open'))return;
+  sb.classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+  document.getElementById('hamburger').classList.remove('open');
+}
+
+/* ══ NAVIGATION ══ */
+let currentPage='dashboard';
+function goTo(page){
+  document.getElementById('page-'+currentPage).classList.remove('active');
+  document.getElementById('nav-'+currentPage)?.classList.remove('active');
+  const oldBn=document.getElementById('bn-'+currentPage);
+  if(oldBn) oldBn.classList.remove('active');
+  currentPage=page;
+  document.getElementById('page-'+page).classList.add('active');
+  document.getElementById('nav-'+page)?.classList.add('active');
+  const newBn=document.getElementById('bn-'+page);
+  if(newBn) newBn.classList.add('active');
+  if(page==='onedrive') syncFullOdView();
+  if(page==='reports') renderReports();
+  closeSidebar();
+}
+
+/* ══ RENDER ALL ══ */
+function renderAll(){
+  renderDashTasks();
+  renderTasksTable();
+  renderProjects();
+  renderTeam();
+  updateKPIs();
+  updateNavBadges();
+}
+
+function updateKPIs(){
+  const done=TASKS.filter(t=>t.done).length;
+  document.getElementById('kpi-proj').textContent=PROJECTS.length;
+  document.getElementById('kpi-done').textContent=done;
+  document.getElementById('kpi-total').textContent=TASKS.length;
+  document.getElementById('kpi-team').textContent=TEAM.length;
+  document.getElementById('dash-task-count').textContent=TASKS.length;
+}
+function updateNavBadges(){
+  const pending=TASKS.filter(t=>!t.done).length;
+  document.getElementById('nb-projects').textContent=PROJECTS.length;
+  document.getElementById('nb-tasks').textContent=pending;
+  document.getElementById('nb-team').textContent=TEAM.length;
+  const bnb=document.getElementById('bnb-tasks');
+  if(bnb){bnb.textContent=pending;bnb.style.display=pending>0?'inline':'none';}
+}
+
+/* ══ DASHBOARD TASKS ══ */
+function renderDashTasks(){
+  const el=document.getElementById('dash-task-list');
+  if(!TASKS.length){el.innerHTML=`<div class="empty-state"><span>✅</span><p>No tasks yet.</p></div>`;return;}
+  el.innerHTML=TASKS.map(t=>`
+    <div class="task-item-dash">
+      <div class="task-cb${t.done?' done':''}" onclick="quickToggleTask(${t.id})"></div>
+      <span class="task-name-d${t.done?' done':''}">${t.name}</span>
+      <span class="task-pri pri-${t.pri}">${t.pri==='h'?'High':t.pri==='m'?'Med':'Low'}</span>
+      <button class="btn btn-ghost btn-sm" style="padding:3px 7px" onclick="openTaskModal(${t.id})" title="Edit">✏️</button>
+    </div>`).join('');
+}
+function quickToggleTask(id){
+  const t=TASKS.find(x=>x.id===id); if(!t)return;
+  t.done=!t.done; save(); saveToGitHub(); renderAll();
+}
+
+/* ══ TASKS TABLE ══ */
+function renderTasksTable(){
+  const tb=document.getElementById('tasks-tbody');
+  const em=document.getElementById('tasks-empty');
+  if(!TASKS.length){tb.innerHTML='';em.style.display='block';return;}
+  em.style.display='none';
+  tb.innerHTML=TASKS.map(t=>`
+    <tr>
+      <td>${t.name}</td>
+      <td><span class="task-pri pri-${t.pri}">${t.pri==='h'?'High':t.pri==='m'?'Medium':'Low'}</span></td>
+      <td>${t.done?'<span class="badge badge-green">Done</span>':'<span class="badge badge-gold">Pending</span>'}</td>
+      <td style="color:var(--text-dim);font-size:0.78rem">${t.due||'–'}</td>
+      <td><div class="actions-cell">
+        <button class="btn btn-ghost btn-sm" onclick="openTaskModal(${t.id})">✏️ Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="confirmDelete('task',${t.id},'${t.name.replace(/'/g,"\\'")}')">🗑️</button>
+      </div></td>
+    </tr>`).join('');
+}
+
+/* ══ TASK MODAL ══ */
+function openTaskModal(id=null){
+  document.getElementById('task-edit-id').value=id||'';
+  if(id){
+    const t=TASKS.find(x=>x.id===id);
+    document.getElementById('task-modal-title').textContent='Edit Task';
+    document.getElementById('task-modal-icon').textContent='✏️';
+    document.getElementById('task-name').value=t.name;
+    document.getElementById('task-pri').value=t.pri;
+    document.getElementById('task-due').value=t.due||'';
+    document.getElementById('task-status').value=String(t.done);
+  }else{
+    document.getElementById('task-modal-title').textContent='New Task';
+    document.getElementById('task-modal-icon').textContent='✅';
+    document.getElementById('task-name').value='';
+    document.getElementById('task-pri').value='m';
+    document.getElementById('task-due').value='';
+    document.getElementById('task-status').value='false';
+  }
+  openModal('task-modal');
+}
+function saveTask(){
+  const name=document.getElementById('task-name').value.trim();
+  if(!name){toast('⚠️ Task name is required');return;}
+  const id=document.getElementById('task-edit-id').value;
+  const data={name,pri:document.getElementById('task-pri').value,due:document.getElementById('task-due').value,done:document.getElementById('task-status').value==='true'};
+  if(id){Object.assign(TASKS.find(t=>t.id==id),data);toast('✅ Task updated');}
+  else{TASKS.push({id:++nextId.task,...data});toast('✅ Task added');}
+  save(); saveToGitHub(); renderAll(); closeModal('task-modal');
+}
+
+/* ══ PROJECTS ══ */
+const STATUS_MAP={
+  'on-track':{label:'On Track',cls:'badge-green'},
+  'at-risk':{label:'At Risk',cls:'badge-gold'},
+  'in-progress':{label:'In Progress',cls:'badge-blue'},
+  'overdue':{label:'Overdue',cls:'badge-red'},
+  'done':{label:'Done',cls:'badge-silver'},
+};
+const PROG_COLOR={'on-track':'var(--green)','at-risk':'var(--gold)','in-progress':'var(--blue)','overdue':'var(--red)','done':'var(--silver)'};
+
+function renderProjects(){
+  const el=document.getElementById('projects-list');
+  if(!PROJECTS.length){el.innerHTML=`<div class="empty-state"><span>📋</span><p>No projects yet. Click "+ New Project" to add one.</p></div>`;return;}
+  el.innerHTML=PROJECTS.map(p=>{
+    const s=STATUS_MAP[p.status]||STATUS_MAP['in-progress'];
+    const c=PROG_COLOR[p.status]||'var(--blue)';
+    return`<div class="project-card">
+      <div class="project-card-top">
+        <div><div class="project-card-title">📋 ${p.name}</div><div class="project-card-desc">${p.desc||''}</div></div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+          <span class="badge ${s.cls}">${s.label}</span>
+          <button class="btn btn-ghost btn-sm" onclick="openProjectModal(${p.id})">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="confirmDelete('project',${p.id},'${p.name.replace(/'/g,"\\'")}')">🗑️</button>
+        </div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${p.progress}%;background:${c}"></div></div>
+      <div class="project-card-bottom"><span>${p.progress}% complete</span><span>Due ${p.due||'–'}</span></div>
+    </div>`;}).join('');
+}
+
+function openProjectModal(id=null, prefilledName=null, odFolderId=null){
+  document.getElementById('proj-edit-id').value=id||'';
+  document.getElementById('proj-od-folder-id').value=odFolderId||'';
+  if(id){
+    const p=PROJECTS.find(x=>x.id===id);
+    document.getElementById('proj-modal-title').textContent='Edit Project';
+    document.getElementById('proj-modal-icon').textContent='✏️';
+    document.getElementById('proj-name').value=p.name;
+    document.getElementById('proj-desc').value=p.desc||'';
+    document.getElementById('proj-progress').value=p.progress;
+    document.getElementById('proj-status').value=p.status;
+    document.getElementById('proj-due').value=p.due||'';
+    document.getElementById('proj-od-folder-id').value=p.odFolderId||'';
+  }else{
+    document.getElementById('proj-modal-title').textContent= odFolderId ? '⭐ Add Folder as Project' : 'New Project';
+    document.getElementById('proj-modal-icon').textContent= odFolderId ? '⭐' : '📋';
+    document.getElementById('proj-name').value=prefilledName||'';
+    document.getElementById('proj-desc').value=odFolderId?'Linked from OneDrive':'';
+    document.getElementById('proj-progress').value=0;
+    document.getElementById('proj-status').value='in-progress';
+    document.getElementById('proj-due').value='';
+  }
+  openModal('project-modal');
+}
+function saveProject(){
+  const name=document.getElementById('proj-name').value.trim();
+  if(!name){toast('⚠️ Project name is required');return;}
+  const id=document.getElementById('proj-edit-id').value;
+  const odFid=document.getElementById('proj-od-folder-id').value||null;
+  const data={name,desc:document.getElementById('proj-desc').value.trim(),progress:parseInt(document.getElementById('proj-progress').value)||0,status:document.getElementById('proj-status').value,due:document.getElementById('proj-due').value,odFolderId:odFid};
+  if(id){Object.assign(PROJECTS.find(p=>p.id==id),data);toast('✅ Project updated');}
+  else{PROJECTS.push({id:++nextId.project,...data});toast('✅ Project added');}
+  save(); saveToGitHub(); renderAll(); closeModal('project-modal');
+}
+
+/* ══ TEAM ══ */
+function renderTeam(){
+  const el=document.getElementById('team-list');
+  const em=document.getElementById('team-empty');
+  if(!TEAM.length){el.innerHTML='';em.style.display='block';return;}
+  em.style.display='none';
+  el.innerHTML=TEAM.map(m=>`
+    <div class="team-card">
+      <div class="av" style="background:${m.color}">${m.name.split(' ').map(w=>w[0]).join('').slice(0,2)}</div>
+      <div class="av-info"><div class="av-name">${m.name}</div><div class="av-role">${m.role||'–'}</div></div>
+      <span class="av-status ${m.status}">${m.status.charAt(0).toUpperCase()+m.status.slice(1)}</span>
+      <div style="display:flex;gap:6px;margin-left:8px">
+        <button class="btn btn-ghost btn-sm" onclick="openTeamModal(${m.id})">✏️ Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="confirmDelete('team',${m.id},'${m.name.replace(/'/g,"\\'")}')">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+function openTeamModal(id=null){
+  document.getElementById('team-edit-id').value=id||'';
+  if(id){
+    const m=TEAM.find(x=>x.id===id);
+    document.getElementById('team-modal-title').textContent='Edit Member';
+    document.getElementById('team-modal-icon').textContent='✏️';
+    document.getElementById('team-name').value=m.name;
+    document.getElementById('team-role').value=m.role||'';
+    document.getElementById('team-status').value=m.status;
+    document.getElementById('team-color').value=m.color||'#1565c0';
+  }else{
+    document.getElementById('team-modal-title').textContent='Add Member';
+    document.getElementById('team-modal-icon').textContent='👤';
+    document.getElementById('team-name').value='';
+    document.getElementById('team-role').value='';
+    document.getElementById('team-status').value='online';
+    document.getElementById('team-color').value='#1565c0';
+  }
+  openModal('team-modal');
+}
+function saveMember(){
+  const name=document.getElementById('team-name').value.trim();
+  if(!name){toast('⚠️ Name is required');return;}
+  const id=document.getElementById('team-edit-id').value;
+  const data={name,role:document.getElementById('team-role').value.trim(),status:document.getElementById('team-status').value,color:document.getElementById('team-color').value};
+  if(id){Object.assign(TEAM.find(m=>m.id==id),data);toast('✅ Member updated');}
+  else{TEAM.push({id:++nextId.team,...data});toast('✅ Member added');}
+  save(); saveToGitHub(); renderAll(); closeModal('team-modal');
+}
+
+/* ══ CONFIRM DELETE ══ */
+function confirmDelete(type,id,name){
+  document.getElementById('confirm-name').textContent=`"${name}"`;
+  document.getElementById('confirm-yes').onclick=()=>{
+    if(type==='task')    TASKS   =TASKS.filter(x=>x.id!==id);
+    if(type==='project') PROJECTS=PROJECTS.filter(x=>x.id!==id);
+    if(type==='team')    TEAM    =TEAM.filter(x=>x.id!==id);
+    save(); saveToGitHub(); renderAll(); closeModal('confirm-modal');
+    toast(`🗑️ Deleted "${name}"`);
+  };
+  openModal('confirm-modal');
+}
+
+/* ══ MODAL HELPERS ══ */
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+// Close on overlay click
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+// Close on Escape
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-overlay.open').forEach(o=>o.classList.remove('open'));});
+
+/* ══ REPORTS ══ */
+function renderReports(){
+  const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const vals=[8,12,6,15,9,4,11];
+  const max=Math.max(...vals);
+  document.getElementById('chart-tasks').innerHTML=vals.map((v,i)=>`
+    <div class="bar-wrap"><div class="bar-val">${v}</div>
+    <div class="bar" style="height:${(v/max)*90}px;background:${i===3?'var(--blue)':'rgba(56,139,253,0.4)'}"></div>
+    <div class="bar-label">${days[i]}</div></div>`).join('');
+  document.getElementById('reports-projects').innerHTML=PROJECTS.length
+    ?PROJECTS.map(p=>{const s=STATUS_MAP[p.status]||STATUS_MAP['in-progress'];const c=PROG_COLOR[p.status]||'var(--blue)';return`<div style="display:flex;align-items:center;gap:14px;padding:10px 0;border-bottom:1px solid var(--border2)"><span style="flex:1;font-size:0.85rem">${p.name}</span><span class="badge ${s.cls}" style="flex-shrink:0">${s.label}</span><div class="progress-bar" style="width:140px"><div class="progress-fill" style="width:${p.progress}%;background:${c}"></div></div><span style="font-size:0.72rem;color:var(--text-dim);width:30px;text-align:right">${p.progress}%</span></div>`;}).join('')
+    :`<div class="empty-state"><span>📊</span><p>No projects to report.</p></div>`;
+}
+
+/* ══ ONEDRIVE AUTH ══ */
+async function msalSignIn(){
+  if(!msalApp){toast('⚠️ Auth not ready');return;}
+  setState('loading');document.getElementById('s-loading-text').textContent='Opening Microsoft sign-in…';
+  try{
+    const r=await msalApp.loginPopup({scopes:SCOPES,prompt:'select_account'});
+    token=r.accessToken;await afterSignIn(r.account);
+  }catch(e){
+    if(e.errorCode==='user_cancelled'){setState('connect');toast('Sign-in cancelled');}
+    else{setState('error');document.getElementById('s-error-detail').textContent=e.message||String(e);}
+  }
+}
+async function silentLogin(account){
+  setState('loading');document.getElementById('s-loading-text').textContent='Restoring session…';
+  try{const r=await msalApp.acquireTokenSilent({scopes:SCOPES,account});token=r.accessToken;await afterSignIn(account);}
+  catch(e){setState('connect');}
+}
+async function afterSignIn(account){
+  try{
+    const me=await gGet('https://graph.microsoft.com/v1.0/me');
+    const name=me.displayName||me.userPrincipalName||account.name||'User';
+    const ini=name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    document.getElementById('user-name').textContent=name;
+    document.getElementById('user-avatar').textContent=ini;
+    document.getElementById('od-account-lbl').textContent=`${me.userPrincipalName||name} — active until sign-out`;
+    document.getElementById('sf-account-lbl').textContent=`${me.userPrincipalName||name} — active until sign-out`;
+    const sp=document.getElementById('set-od-pill');sp.className='status-pill on';sp.style.cursor='default';
+    document.getElementById('set-od-status').textContent='Connected';
+  }catch(_){}
+  setPill(true);document.getElementById('sidebar-od-label').textContent='Sign Out OneDrive';
+  setState('ui');loadFolder('root');syncFullOdView();
+}
+async function msalSignOut(){
+  if(!confirm('Sign out of OneDrive?'))return;
+  token=null;const accounts=msalApp?.getAllAccounts()||[];
+  if(accounts.length)await msalApp.logoutPopup({account:accounts[0]}).catch(()=>{});
+  setPill(false);document.getElementById('sidebar-od-label').textContent='Connect OneDrive';
+  document.getElementById('user-name').textContent='Admin';document.getElementById('user-avatar').textContent='AD';
+  document.getElementById('kpi-files').textContent='–';document.getElementById('kpi-files-sub').textContent='Not connected';
+  const sp=document.getElementById('set-od-pill');sp.className='status-pill off';document.getElementById('set-od-status').textContent='Disconnected';
+  setState('connect');syncFullOdView();toast('🔓 Signed out of OneDrive');
+}
+function pillClick(){const a=msalApp?.getAllAccounts()||[];a.length?msalSignOut():msalSignIn();}
+function syncFullOdView(){
+  const conn=!!(msalApp?.getAllAccounts()?.length);
+  document.getElementById('sf-connect').style.display=conn?'none':'flex';
+  document.getElementById('sf-ui').style.display=conn?'flex':'none';
+  const b=document.getElementById('od-full-badge');
+  b.style.display=conn?'inline-flex':'none';
+  if(conn)loadFolder(odPath[odPath.length-1].id,true);
+}
+
+/* ══ GRAPH ══ */
+async function gGet(url){
+  if(!token)throw new Error('No token');
+  const r=await fetch(url,{headers:{Authorization:`Bearer ${token}`}});
+  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||`HTTP ${r.status}`);}
+  return r.json();
+}
+
+/* ══ FILE BROWSER ══ */
+async function loadFolder(fid,full=false){
+  showSpinner(full);
+  try{
+    const url=fid==='root'?'https://graph.microsoft.com/v1.0/me/drive/root/children?$top=100&$orderby=name':`https://graph.microsoft.com/v1.0/me/drive/items/${fid}/children?$top=100&$orderby=name`;
+    const d=await gGet(url);
+    renderItems(d.value||[],full);
+    document.getElementById('kpi-files').textContent=d.value?.length||0;
+    document.getElementById('kpi-files-sub').textContent='Live OneDrive files';
+    document.getElementById(full?'sf-count-lbl':'od-count-lbl').textContent=`${d.value?.length||0} items`;
+    renderPath(full);
+  }catch(e){
+    if(!full){document.getElementById('s-error-detail').textContent=e.message;setState('error');}
+    else document.getElementById('sf-files').innerHTML=`<div class="no-results"><span>⚠️</span><p>${e.message}</p></div>`;
+  }
+}
+function onSearch(q,full=false){
+  clearTimeout(sTimer);if(!q.trim()){loadFolder(odPath[odPath.length-1].id,full);return;}
+  sTimer=setTimeout(async()=>{showSpinner(full);try{const d=await gGet(`https://graph.microsoft.com/v1.0/me/drive/root/search(q='${encodeURIComponent(q)}')?$top=50`);renderItems(d.value||[],full);document.getElementById(full?'sf-count-lbl':'od-count-lbl').textContent=`${d.value?.length||0} results`;}catch(e){document.getElementById(full?'sf-files':'od-files').innerHTML=`<div class="no-results"><span>⚠️</span><p>${e.message}</p></div>`;}},400);
+}
+function refreshFiles(full=false){const inp=document.getElementById(full?'sf-search':'od-search');if(inp)inp.value='';loadFolder(odPath[odPath.length-1].id,full);toast('↻ Refreshed');}
+function isStarred(id){ return PROJECTS.some(p=>p.odFolderId===id); }
+function toggleStar(id, name, event){
+  event.stopPropagation();
+  if(isStarred(id)){
+    // unstar: remove matching project
+    const proj = PROJECTS.find(p=>p.odFolderId===id);
+    if(proj && confirm('Remove project "'+proj.name+'" from Projects?')){
+      PROJECTS = PROJECTS.filter(p=>p.odFolderId!==id);
+      save(); saveToGitHub(); renderAll();
+      toast('⭐ Removed from Projects');
+    }
+  } else {
+    // star: open project modal pre-filled
+    openProjectModal(null, name, id);
+    toast('📋 Fill in details and save to add as project');
+  }
+  // re-render stars without full reload
+  document.querySelectorAll('.file-star[data-fid="'+id+'"]').forEach(el=>{
+    el.classList.toggle('starred', isStarred(id));
+    el.title = isStarred(id)?'Remove project':'Add as project';
+    el.textContent = isStarred(id)?'⭐':'☆';
+  });
+  document.querySelectorAll('.rs-star[data-fid="'+id+'"]').forEach(el=>{
+    el.classList.toggle('starred', isStarred(id));
+    el.title = isStarred(id)?'Remove project':'Add as project';
+    el.textContent = isStarred(id)?'⭐':'☆';
+  });
+}
+
+function renderItems(items,full=false){
+  const c=document.getElementById(full?'sf-files':'od-files');
+  if(!items.length){c.innerHTML=`<div class="no-results"><span>📭</span><p>No files here</p></div>`;return;}
+  if(odView==='grid'){
+    c.innerHTML=`<div class="file-grid">${items.map(f=>{
+      const starred=isStarred(f.id);
+      const starBtn=f.folder?`<div class="file-star${starred?' starred':''}" data-fid="${f.id}" onclick="toggleStar('${f.id}','${esc(f.name)}',event)" title="${starred?'Remove project':'Add as project'}">${starred?'⭐':'☆'}</div>`:'';
+      const dlBtn=!f.folder?`<div class="file-dl-btn" onclick="dlFile('${f.id}','${esc(f.name)}',event)" title="Download">⬇</div>`:'';
+      return`<div class="file-card" id="${full?'sf':'fc'}${f.id}" onclick="clickItem('${f.id}','${esc(f.name)}',${!!f.folder},${full},event)">
+        ${starBtn}${dlBtn}
+        <div class="file-icon">${fIcon(f)}</div>
+        <div class="file-name">${f.name}</div>
+        <div class="file-size">${fSize(f.size)}</div>
+      </div>`;
+    }).join('')}</div>`;
+  }else{
+    c.innerHTML=`<div class="file-list-view">
+      <div class="file-row" style="opacity:.35;cursor:default;font-size:.68rem;letter-spacing:1.2px;text-transform:uppercase;pointer-events:none">
+        <span class="ri"></span><span class="rn">Name</span><span class="rm">Modified</span><span class="rs">Size</span>
+        <span class="rs-star" style="opacity:0">⭐</span><span class="rd" style="opacity:0">⬇</span>
+      </div>
+      ${items.map(f=>{
+        const starred=isStarred(f.id);
+        return`<div class="file-row" id="${full?'sf':'fc'}${f.id}" onclick="clickItem('${f.id}','${esc(f.name)}',${!!f.folder},${full},event)">
+          <span class="ri">${fIcon(f)}</span>
+          <span class="rn">${f.name}</span>
+          <span class="rm">${fDate(f.lastModifiedDateTime)}</span>
+          <span class="rs">${fSize(f.size)}</span>
+          ${f.folder?`<span class="rs-star${starred?' starred':''}" data-fid="${f.id}" onclick="toggleStar('${f.id}','${esc(f.name)}',event)" title="${starred?'Remove project':'Add as project'}">${starred?'⭐':'☆'}</span>`:'<span class="rs-star" style="opacity:0;pointer-events:none"></span>'}
+          ${!f.folder?`<span class="rd" onclick="dlFile('${f.id}','${esc(f.name)}',event)" title="Download">⬇</span>`:'<span class="rd" style="opacity:0;pointer-events:none"></span>'}
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+}
+function clickItem(id,name,isFolder,full,e){
+  if(selId){const o=document.getElementById((full?'sf':'fc')+selId);if(o)o.classList.remove('selected');}
+  selId=id;document.getElementById((full?'sf':'fc')+id)?.classList.add('selected');
+  if(isFolder){odPath.push({id,name});loadFolder(id,full);}
+}
+async function dlFile(id,name,e){
+  e.stopPropagation();toast(`⬇️ Preparing: ${name}`);
+  try{const d=await gGet(`https://graph.microsoft.com/v1.0/me/drive/items/${id}?select=@microsoft.graph.downloadUrl,name`);const url=d['@microsoft.graph.downloadUrl'];if(url){const a=document.createElement('a');a.href=url;a.download=name;a.target='_blank';document.body.appendChild(a);a.click();document.body.removeChild(a);toast(`✅ Downloading: ${name}`);}else toast('⚠️ Download URL not available');}
+  catch(e){toast(`❌ ${e.message}`);}
+}
+function renderPath(full=false){
+  const el=document.getElementById(full?'sf-path':'od-path');
+  el.innerHTML=odPath.map((p,i)=>{const last=i===odPath.length-1;return`${i>0?'<span class="od-path-sep">›</span>':''}<span class="crumb${last?' last':''}"${last?'':` onclick="navTo(${i},${full})"`}>${p.name}</span>`;}).join('');
+}
+function navTo(i,full=false){odPath=odPath.slice(0,i+1);loadFolder(odPath[odPath.length-1].id,full);}
+function setView(v,full=false){
+  odView=v;
+  ['btn-grid','btn-list','sf-btn-grid','sf-btn-list'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.toggle('active',id.includes(v==='grid'?'grid':'list'));});
+  const q=document.getElementById(full?'sf-search':'od-search')?.value||'';
+  q.trim()?onSearch(q,full):loadFolder(odPath[odPath.length-1].id,full);
+}
+function setState(s){['connect','loading','error','ui'].forEach(k=>{document.getElementById('s-'+k).style.display=k===s?'flex':'none';});}
+function showSpinner(full=false){document.getElementById(full?'sf-files':'od-files').innerHTML=`<div class="od-loading-inline"><div class="spinner"></div><span>Loading…</span></div>`;}
+function setPill(on){const p=document.getElementById('od-pill');p.className=`status-pill ${on?'on':'off'}`;document.getElementById('od-pill-label').textContent=`OneDrive: ${on?'Active':'Disconnected'}`;}
+
+/* ── File helpers ── */
+function fIcon(f){if(f.folder)return'📁';const e=(f.name.split('.').pop()||'').toLowerCase();return({pdf:'📋',docx:'📄',doc:'📄',xlsx:'📊',xls:'📊',pptx:'📑',ppt:'📑',zip:'🗜️',rar:'🗜️',png:'🖼️',jpg:'🖼️',jpeg:'🖼️',gif:'🖼️',mp4:'🎬',mov:'🎬',mp3:'🎵',txt:'📝',csv:'📊',json:'🔧',js:'🔧',ts:'🔧',html:'🌐',css:'🎨'}[e]||'📄');}
+function fSize(b){if(!b)return'–';if(b<1024)return b+'B';if(b<1048576)return(b/1024).toFixed(0)+'KB';if(b<1073741824)return(b/1048576).toFixed(1)+'MB';return(b/1073741824).toFixed(1)+'GB';}
+function fDate(s){if(!s)return'–';return new Date(s).toLocaleDateString('en-AU',{day:'numeric',month:'short'});}
+function esc(s){return s.replace(/'/g,"\\'").replace(/"/g,'&quot;');}
+
+/* ── Toast ── */
+let tTimer;
+function toast(msg){const e=document.getElementById('toast');e.textContent=msg;e.classList.add('show');clearTimeout(tTimer);tTimer=setTimeout(()=>e.classList.remove('show'),2800);}
+</script>
+</body>
+</html>
