@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>PAH – Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
+<style>
+:root{
+  --bg:#070d1a;--surface:#0c1526;--surface2:#111e35;
+  --border:rgba(56,139,253,0.18);--border2:rgba(56,139,253,0.08);
+  --blue:#388bfd;--blue-dim:rgba(56,139,253,0.12);
+  --gold:#f0c060;--green:#3fb950;--red:#f85149;
+  --silver:#8b949e;--text:#cdd9e5;--text-dim:#768390;
+  --glow:0 0 20px rgba(56,139,253,0.2);--glow-s:0 0 32px rgba(56,139,253,0.4);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);pointer-events:none;z-index:9999}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:60px;flex-shrink:0;background:linear-gradient(90deg,#060c1a,#0a1428 50%,#060c1a);border-bottom:1px solid var(--border);position:relative;z-index:10}
+.topbar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--blue),transparent)}
+.brand{display:flex;align-items:center;gap:12px}
+.brand img{width:40px;height:40px;object-fit:contain;filter:drop-shadow(0 0 10px rgba(56,139,253,0.6));animation:logoPulse 3s ease-in-out infinite}
+@keyframes logoPulse{0%,100%{filter:drop-shadow(0 0 8px rgba(56,139,253,0.5))}50%{filter:drop-shadow(0 0 18px rgba(56,139,253,0.9))}}
+.brand-name{font-family:'Orbitron',monospace;font-size:1rem;font-weight:700;letter-spacing:2px;color:var(--blue);text-shadow:0 0 12px rgba(56,139,253,0.5)}
+.brand-sub{font-size:0.65rem;color:var(--text-dim);letter-spacing:3px;text-transform:uppercase;margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:16px}
+.user-chip{display:flex;align-items:center;gap:8px;padding:5px 14px 5px 6px;border-radius:30px;background:var(--surface2);border:1px solid var(--border);font-size:0.8rem;color:var(--text-dim)}
+.user-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#1565c0,var(--blue));display:grid;place-items:center;font-size:0.75rem;font-weight:700;color:#fff}
+.status-pill{display:flex;align-items:center;gap:6px;font-size:0.75rem;padding:4px 12px;border-radius:20px;border:1px solid;cursor:pointer;transition:all 0.2s;font-weight:500}
+.status-pill.off{border-color:rgba(248,81,73,0.4);color:var(--red);background:rgba(248,81,73,0.08)}
+.status-pill.on{border-color:rgba(63,185,80,0.4);color:var(--green);background:rgba(63,185,80,0.08)}
+.status-pill .dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+.status-pill.on .dot{box-shadow:0 0 6px currentColor;animation:blink 1.8s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.4}}
+
+.layout{display:flex;flex:1;overflow:hidden}
+.sidebar{width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border2);display:flex;flex-direction:column;padding:16px 0;overflow-y:auto}
+.sidebar-section{padding:8px 16px 4px;font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);font-weight:600}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 20px;margin:1px 8px;border-radius:8px;font-size:0.85rem;color:var(--text-dim);cursor:pointer;transition:all 0.15s;border:1px solid transparent}
+.nav-item:hover{background:var(--blue-dim);color:var(--text);border-color:var(--border2)}
+.nav-item.active{background:rgba(56,139,253,0.15);color:var(--blue);border-color:rgba(56,139,253,0.25);font-weight:500}
+.nav-item .ni{font-size:1rem;width:18px;text-align:center}
+.nav-badge{margin-left:auto;font-size:0.65rem;padding:1px 7px;border-radius:10px;background:rgba(56,139,253,0.2);color:var(--blue);font-weight:700}
+.sidebar-divider{height:1px;background:var(--border2);margin:10px 16px}
+.sidebar-bottom{margin-top:auto}
+
+.content{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.kpi-strip{display:flex;border-bottom:1px solid var(--border2);flex-shrink:0;overflow-x:auto}
+.kpi{flex:1;min-width:140px;padding:14px 22px;border-right:1px solid var(--border2);position:relative;overflow:hidden}
+.kpi:last-child{border-right:none}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kpi.b::before{background:linear-gradient(90deg,#1565c0,var(--blue))}.kpi.g::before{background:linear-gradient(90deg,#2ea043,var(--green))}.kpi.o::before{background:linear-gradient(90deg,#e65100,var(--gold))}.kpi.s::before{background:linear-gradient(90deg,#455a64,var(--silver))}
+.kpi-label{font-size:0.68rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim)}
+.kpi-val{font-family:'Orbitron',monospace;font-size:1.6rem;font-weight:700;line-height:1.2;margin:4px 0 2px}
+.kpi.b .kpi-val{color:var(--blue)}.kpi.g .kpi-val{color:var(--green)}.kpi.o .kpi-val{color:var(--gold)}.kpi.s .kpi-val{color:var(--silver)}
+.kpi-sub{font-size:0.7rem;color:var(--text-dim)}
+
+.panels{display:flex;flex:1;overflow:hidden}
+.left-panel{width:300px;flex-shrink:0;border-right:1px solid var(--border2);display:flex;flex-direction:column;overflow:hidden}
+.panel-head{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border2);flex-shrink:0}
+.panel-head-title{font-size:0.8rem;font-weight:600;letter-spacing:0.5px;display:flex;align-items:center;gap:7px}
+.badge{font-size:0.65rem;padding:2px 8px;border-radius:10px;font-weight:700;letter-spacing:0.5px}
+.badge-blue{background:rgba(56,139,253,0.15);color:var(--blue);border:1px solid rgba(56,139,253,0.3)}
+.badge-green{background:rgba(63,185,80,0.12);color:var(--green);border:1px solid rgba(63,185,80,0.25)}
+.badge-gold{background:rgba(240,192,96,0.12);color:var(--gold);border:1px solid rgba(240,192,96,0.25)}
+.task-list{flex:1;overflow-y:auto;padding:8px}
+.task-item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;margin-bottom:2px;cursor:pointer;transition:background 0.15s;border:1px solid transparent}
+.task-item:hover{background:var(--blue-dim);border-color:var(--border2)}
+.task-cb{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--silver);flex-shrink:0;display:grid;place-items:center;transition:all 0.15s}
+.task-cb.done{background:var(--green);border-color:var(--green)}
+.task-cb.done::after{content:'✓';font-size:10px;color:#fff;font-weight:700}
+.task-name-wrap{flex:1;min-width:0}
+.task-name{font-size:0.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.task-name.done{text-decoration:line-through;color:var(--text-dim)}
+.task-pri{font-size:0.65rem;padding:2px 7px;border-radius:8px;font-weight:700;flex-shrink:0}
+.pri-h{background:rgba(248,81,73,0.15);color:var(--red)}.pri-m{background:rgba(240,192,96,0.15);color:var(--gold)}.pri-l{background:rgba(63,185,80,0.12);color:var(--green)}
+
+.right-panel{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.od-connect-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:40px;text-align:center}
+.od-connect-icon{font-size:4rem;opacity:0.25;margin-bottom:6px}
+.od-connect-screen h2{font-family:'Orbitron',monospace;font-size:1rem;color:var(--text-dim)}
+.od-connect-screen p{font-size:0.82rem;color:var(--text-dim);max-width:360px;line-height:1.75}
+.btn-connect{padding:12px 32px;border-radius:9px;border:1.5px solid var(--blue);background:rgba(56,139,253,0.12);color:var(--blue);font-family:'DM Sans',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:10px}
+.btn-connect:hover{background:rgba(56,139,253,0.22);box-shadow:var(--glow-s)}
+.btn-connect:disabled{opacity:0.5;cursor:not-allowed}
+.ms-logo{width:18px;height:18px;display:grid;grid-template-columns:1fr 1fr;gap:2px;flex-shrink:0}
+.ms-logo span{border-radius:1px}
+.ms-logo span:nth-child(1){background:#f25022}.ms-logo span:nth-child(2){background:#7fba00}
+.ms-logo span:nth-child(3){background:#00a4ef}.ms-logo span:nth-child(4){background:#ffb900}
+
+.od-ui{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.od-toolbar{padding:10px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border2);flex-shrink:0;flex-wrap:wrap}
+.search-wrap{flex:1;min-width:180px;position:relative}
+.search-wrap input{width:100%;padding:8px 12px 8px 34px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.83rem;outline:none;transition:border-color 0.2s}
+.search-wrap input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(56,139,253,0.1)}
+.search-wrap input::placeholder{color:var(--text-dim)}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:0.85rem;pointer-events:none}
+.od-view-btn{padding:7px 13px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--text-dim);cursor:pointer;font-size:0.85rem;transition:all 0.15s;font-family:'DM Sans',sans-serif}
+.od-view-btn:hover,.od-view-btn.active{background:var(--blue-dim);color:var(--blue);border-color:rgba(56,139,253,0.3)}
+.od-path{padding:8px 18px;font-size:0.75rem;color:var(--text-dim);border-bottom:1px solid var(--border2);flex-shrink:0;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.crumb{cursor:pointer;transition:color 0.15s;padding:2px 5px;border-radius:4px}
+.crumb:hover{color:var(--blue);background:var(--blue-dim)}
+.crumb.last{color:var(--text);cursor:default}
+.od-path-sep{opacity:0.3}
+
+.od-files{flex:1;overflow-y:auto;padding:14px 18px}
+.file-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px}
+.file-card{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 10px 12px;border-radius:10px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;transition:all 0.15s;text-align:center;position:relative}
+.file-card:hover{border-color:rgba(56,139,253,0.35);background:var(--blue-dim);box-shadow:var(--glow)}
+.file-card.selected{border-color:var(--blue);background:rgba(56,139,253,0.1)}
+.file-icon{font-size:2.2rem;line-height:1}
+.file-name{font-size:0.72rem;word-break:break-word;color:var(--text);line-height:1.3}
+.file-size{font-size:0.65rem;color:var(--text-dim)}
+.file-dl-btn{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:5px;background:rgba(56,139,253,0.2);border:1px solid rgba(56,139,253,0.3);color:var(--blue);font-size:0.75rem;display:none;place-items:center;cursor:pointer;transition:all 0.15s}
+.file-card:hover .file-dl-btn{display:grid}
+.file-dl-btn:hover{background:rgba(56,139,253,0.4)}
+
+.file-list-view{display:flex;flex-direction:column;gap:2px}
+.file-row{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:7px;border:1px solid transparent;cursor:pointer;transition:all 0.12s}
+.file-row:hover{background:var(--blue-dim);border-color:var(--border2)}
+.file-row.selected{background:rgba(56,139,253,0.1);border-color:rgba(56,139,253,0.25)}
+.file-row .ri{font-size:1.2rem;width:24px;text-align:center;flex-shrink:0}
+.file-row .rn{flex:1;font-size:0.82rem;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-row .rm{font-size:0.72rem;color:var(--text-dim);width:90px;text-align:right;flex-shrink:0}
+.file-row .rs{font-size:0.72rem;color:var(--text-dim);width:65px;text-align:right;flex-shrink:0}
+.file-row .rd{width:26px;height:26px;border-radius:6px;flex-shrink:0;background:rgba(56,139,253,0.15);border:1px solid rgba(56,139,253,0.25);color:var(--blue);font-size:0.8rem;display:grid;place-items:center;cursor:pointer;transition:all 0.15s;opacity:0}
+.file-row:hover .rd{opacity:1}
+.file-row .rd:hover{background:rgba(56,139,253,0.35)}
+
+.od-loading-inline{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:60px;color:var(--text-dim);font-size:0.85rem}
+.spinner{width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.no-results{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:10px;color:var(--text-dim);font-size:0.85rem;padding:60px;text-align:center}
+.no-results span{font-size:2.5rem;opacity:0.3}
+
+.od-statusbar{padding:7px 18px;border-top:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;font-size:0.7rem;color:var(--text-dim);flex-shrink:0;background:var(--surface)}
+.od-statusbar .conn-info{display:flex;align-items:center;gap:6px}
+.od-statusbar .dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green)}
+
+.od-state-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:40px;text-align:center;color:var(--text-dim)}
+.od-state-screen .err-icon{font-size:2.5rem;opacity:0.4}
+.od-state-screen p{font-size:0.82rem;max-width:360px;line-height:1.7}
+.err-detail{font-size:0.72rem;color:var(--red);background:rgba(248,81,73,0.08);padding:8px 14px;border-radius:6px;border:1px solid rgba(248,81,73,0.2);max-width:400px;word-break:break-word}
+.btn-retry{padding:9px 24px;border-radius:8px;border:1px solid var(--blue);background:var(--blue-dim);color:var(--blue);font-family:'DM Sans',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all 0.2s}
+.btn-retry:hover{box-shadow:var(--glow)}
+
+.toast{position:fixed;bottom:24px;right:24px;padding:10px 18px;border-radius:8px;background:#1a2740;border:1px solid var(--blue);color:var(--text);font-size:0.8rem;font-weight:500;box-shadow:var(--glow-s);z-index:9998;transform:translateY(20px);opacity:0;transition:all 0.3s;pointer-events:none;max-width:320px}
+.toast.show{transform:translateY(0);opacity:1}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(56,139,253,0.2);border-radius:3px}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.kpi{animation:fadeIn 0.5s ease both}
+.kpi:nth-child(1){animation-delay:.05s}.kpi:nth-child(2){animation-delay:.1s}.kpi:nth-child(3){animation-delay:.15s}.kpi:nth-child(4){animation-delay:.2s}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <img src="PAH_logo_with_3D_design.png" alt="PAH" onerror="this.style.display='none'"/>
+    <div><div class="brand-name">PAH</div><div class="brand-sub">Admin Panel</div></div>
+  </div>
+  <div class="topbar-right">
+    <div class="status-pill off" id="od-pill" onclick="pillClick()">
+      <div class="dot"></div><span id="od-pill-label">OneDrive: Disconnected</span>
+    </div>
+    <div class="user-chip">
+      <div class="user-avatar" id="user-avatar">AD</div>
+      <span id="user-name">Admin</span>
+    </div>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-section">Workspace</div>
+    <div class="nav-item active"><span class="ni">🗂</span> Dashboard</div>
+    <div class="nav-item"><span class="ni">📋</span> Projects <span class="nav-badge">12</span></div>
+    <div class="nav-item"><span class="ni">✅</span> Tasks <span class="nav-badge">6</span></div>
+    <div class="nav-item"><span class="ni">👥</span> Team</div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">Files</div>
+    <div class="nav-item" onclick="pillClick()"><span class="ni">☁️</span> OneDrive</div>
+    <div class="nav-item"><span class="ni">📁</span> Shared Drives</div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">System</div>
+    <div class="nav-item"><span class="ni">⚙️</span> Settings</div>
+    <div class="nav-item"><span class="ni">📊</span> Reports</div>
+    <div class="sidebar-bottom">
+      <div class="sidebar-divider"></div>
+      <div class="nav-item" onclick="pillClick()"><span class="ni">🔓</span><span id="sidebar-od-label">Connect OneDrive</span></div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="kpi-strip">
+      <div class="kpi b"><div class="kpi-label">Active Projects</div><div class="kpi-val">12</div><div class="kpi-sub">3 due this week</div></div>
+      <div class="kpi g"><div class="kpi-label">Tasks Done</div><div class="kpi-val">84</div><div class="kpi-sub">↑9 from last week</div></div>
+      <div class="kpi o"><div class="kpi-label">Pending Reviews</div><div class="kpi-val">7</div><div class="kpi-sub">2 overdue</div></div>
+      <div class="kpi s"><div class="kpi-label">OneDrive Files</div><div class="kpi-val" id="kpi-files">–</div><div class="kpi-sub" id="kpi-files-sub">Not connected</div></div>
+    </div>
+
+    <div class="panels">
+      <!-- Tasks -->
+      <div class="left-panel">
+        <div class="panel-head">
+          <div class="panel-head-title">📋 Tasks <span class="badge badge-blue">6</span></div>
+          <span class="badge badge-gold">TODAY</span>
+        </div>
+        <div class="task-list" id="task-list"></div>
+      </div>
+
+      <!-- OneDrive -->
+      <div class="right-panel" id="od-right">
+
+        <!-- State: connect -->
+        <div id="s-connect" class="od-connect-screen">
+          <div class="od-connect-icon">☁️</div>
+          <h2>Connect Your OneDrive</h2>
+          <p>Sign in with your Microsoft account to browse, search, and download your real OneDrive files. Session stays active until you sign out.</p>
+          <button class="btn-connect" id="connect-btn" onclick="msalSignIn()">
+            <div class="ms-logo"><span></span><span></span><span></span><span></span></div>
+            Sign in with Microsoft
+          </button>
+        </div>
+
+        <!-- State: loading -->
+        <div id="s-loading" class="od-state-screen" style="display:none">
+          <div class="spinner"></div>
+          <p id="s-loading-text">Connecting to OneDrive…</p>
+        </div>
+
+        <!-- State: error -->
+        <div id="s-error" class="od-state-screen" style="display:none">
+          <div class="err-icon">⚠️</div>
+          <p>Could not connect to OneDrive.</p>
+          <div class="err-detail" id="s-error-detail"></div>
+          <button class="btn-retry" onclick="msalSignIn()">Try Again</button>
+        </div>
+
+        <!-- State: UI -->
+        <div id="s-ui" class="od-ui" style="display:none">
+          <div class="panel-head">
+            <div class="panel-head-title">☁️ OneDrive <span class="badge badge-green">● Live</span></div>
+            <button class="od-view-btn" onclick="msalSignOut()">Sign Out</button>
+          </div>
+          <div class="od-toolbar">
+            <div class="search-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="od-search" placeholder="Search your OneDrive…" oninput="onSearch(this.value)"/>
+            </div>
+            <button class="od-view-btn active" id="btn-grid" onclick="setView('grid')">⊞ Grid</button>
+            <button class="od-view-btn" id="btn-list" onclick="setView('list')">☰ List</button>
+            <button class="od-view-btn" onclick="refreshFiles()" title="Refresh">↻</button>
+          </div>
+          <div class="od-path" id="od-path"></div>
+          <div class="od-files" id="od-files"></div>
+          <div class="od-statusbar">
+            <div class="conn-info"><div class="dot"></div><span id="od-account-lbl">Loading…</span></div>
+            <span id="od-count-lbl">–</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── MSAL CONFIG ── */
+const msalConfig = {
+  auth: {
+    clientId: 'b2254255-5b58-4bc1-8144-e2d54b26327b',
+    authority: 'https://login.microsoftonline.com/common',
+    redirectUri: window.location.origin + window.location.pathname,
+  },
+  cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false }
+};
+const SCOPES = ['Files.Read','Files.ReadWrite','User.Read'];
+
+let msalApp = null;
+let token   = null;
+let view    = 'grid';
+let path    = [{ id:'root', name:'🏠 My Drive' }];
+let selId   = null;
+let sTimer  = null;
+
+const TASKS = [
+  {id:1,name:'Review Q1 budget report',done:true,pri:'h'},
+  {id:2,name:'Send stakeholder update',done:false,pri:'h'},
+  {id:3,name:'Update project timeline',done:false,pri:'m'},
+  {id:4,name:'Schedule team stand-up',done:true,pri:'l'},
+  {id:5,name:'Prepare compliance checklist',done:false,pri:'m'},
+  {id:6,name:'Archive sprint files to OneDrive',done:false,pri:'l'},
+];
+
+/* ── INIT ── */
+window.addEventListener('DOMContentLoaded', async () => {
+  renderTasks();
+  try {
+    msalApp = new msal.PublicClientApplication(msalConfig);
+    await msalApp.initialize();
+    const resp = await msalApp.handleRedirectPromise();
+    if (resp?.accessToken) { token = resp.accessToken; await afterSignIn(resp.account); return; }
+    const accounts = msalApp.getAllAccounts();
+    if (accounts.length) await silentLogin(accounts[0]);
+  } catch(e){ console.error(e); }
+});
+
+/* ── AUTH ── */
+async function msalSignIn(){
+  if(!msalApp){ toast('⚠️ Auth not ready'); return; }
+  setState('loading'); setLoadingText('Opening Microsoft sign-in…');
+  try{
+    const r = await msalApp.loginPopup({ scopes:SCOPES, prompt:'select_account' });
+    token = r.accessToken;
+    await afterSignIn(r.account);
+  }catch(e){
+    if(e.errorCode==='user_cancelled'){ setState('connect'); toast('Sign-in cancelled'); }
+    else showErr(e.message||String(e));
+  }
+}
+
+async function silentLogin(account){
+  setState('loading'); setLoadingText('Restoring session…');
+  try{
+    const r = await msalApp.acquireTokenSilent({ scopes:SCOPES, account });
+    token = r.accessToken;
+    await afterSignIn(account);
+  }catch(e){ setState('connect'); }
+}
+
+async function afterSignIn(account){
+  try{
+    const me = await gGet('https://graph.microsoft.com/v1.0/me');
+    const name = me.displayName || me.userPrincipalName || account.name || 'User';
+    const ini  = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    document.getElementById('user-name').textContent   = name;
+    document.getElementById('user-avatar').textContent = ini;
+    document.getElementById('od-account-lbl').textContent = `${me.userPrincipalName||name} — session active until sign-out`;
+  }catch(_){}
+  setPill(true);
+  document.getElementById('sidebar-od-label').textContent = 'Sign Out OneDrive';
+  setState('ui');
+  loadFolder('root');
+}
+
+async function msalSignOut(){
+  if(!confirm('Sign out of OneDrive? Your session will end.')) return;
+  token = null;
+  const accounts = msalApp?.getAllAccounts()||[];
+  if(accounts.length) await msalApp.logoutPopup({ account:accounts[0] }).catch(()=>{});
+  setPill(false);
+  document.getElementById('sidebar-od-label').textContent = 'Connect OneDrive';
+  document.getElementById('user-name').textContent   = 'Admin';
+  document.getElementById('user-avatar').textContent = 'AD';
+  document.getElementById('kpi-files').textContent   = '–';
+  document.getElementById('kpi-files-sub').textContent = 'Not connected';
+  setState('connect');
+  toast('🔓 Signed out of OneDrive');
+}
+
+function pillClick(){
+  const accounts = msalApp?.getAllAccounts()||[];
+  accounts.length ? msalSignOut() : msalSignIn();
+}
+
+/* ── GRAPH ── */
+async function gGet(url){
+  if(!token) throw new Error('No token');
+  const r = await fetch(url,{ headers:{ Authorization:`Bearer ${token}` }});
+  if(!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.error?.message||`HTTP ${r.status}`); }
+  return r.json();
+}
+
+/* ── FILE BROWSER ── */
+async function loadFolder(fid){
+  showFilesSpinner();
+  path[path.length-1].id = fid==='root'?'root':fid;
+  try{
+    const url = fid==='root'
+      ? 'https://graph.microsoft.com/v1.0/me/drive/root/children?$top=100&$orderby=name'
+      : `https://graph.microsoft.com/v1.0/me/drive/items/${fid}/children?$top=100&$orderby=name`;
+    const d = await gGet(url);
+    renderItems(d.value||[]);
+    document.getElementById('kpi-files').textContent = d.value?.length||0;
+    document.getElementById('kpi-files-sub').textContent = 'Live OneDrive files';
+    document.getElementById('od-count-lbl').textContent = `${d.value?.length||0} items`;
+    renderPath();
+  }catch(e){ showErr(e.message); }
+}
+
+function onSearch(q){
+  clearTimeout(sTimer);
+  if(!q.trim()){ loadFolder(path[path.length-1].id); return; }
+  sTimer = setTimeout(async()=>{
+    showFilesSpinner();
+    try{
+      const d = await gGet(`https://graph.microsoft.com/v1.0/me/drive/root/search(q='${encodeURIComponent(q)}')?$top=50`);
+      renderItems(d.value||[]);
+      document.getElementById('od-count-lbl').textContent = `${d.value?.length||0} results`;
+    }catch(e){ showErr(e.message); }
+  },400);
+}
+
+function refreshFiles(){
+  document.getElementById('od-search').value='';
+  loadFolder(path[path.length-1].id);
+  toast('↻ Refreshed');
+}
+
+function renderItems(items){
+  const c = document.getElementById('od-files');
+  if(!items.length){ c.innerHTML=`<div class="no-results"><span>📭</span><p>No files here</p></div>`; return; }
+  if(view==='grid'){
+    c.innerHTML=`<div class="file-grid">${items.map(f=>`
+      <div class="file-card" id="fc${f.id}" onclick="clickItem('${f.id}','${esc(f.name)}',${!!f.folder},event)">
+        <div class="file-icon">${fIcon(f)}</div>
+        <div class="file-name">${f.name}</div>
+        <div class="file-size">${fSize(f.size)}</div>
+        ${!f.folder?`<div class="file-dl-btn" onclick="dlFile('${f.id}','${esc(f.name)}',event)" title="Download">⬇</div>`:''}
+      </div>`).join('')}</div>`;
+  } else {
+    c.innerHTML=`<div class="file-list-view">
+      <div class="file-row" style="opacity:.35;cursor:default;font-size:.68rem;letter-spacing:1.2px;text-transform:uppercase;pointer-events:none">
+        <span class="ri"></span><span class="rn">Name</span><span class="rm">Modified</span><span class="rs">Size</span><span class="rd" style="opacity:0">⬇</span>
+      </div>
+      ${items.map(f=>`
+      <div class="file-row" id="fc${f.id}" onclick="clickItem('${f.id}','${esc(f.name)}',${!!f.folder},event)">
+        <span class="ri">${fIcon(f)}</span>
+        <span class="rn">${f.name}</span>
+        <span class="rm">${fDate(f.lastModifiedDateTime)}</span>
+        <span class="rs">${fSize(f.size)}</span>
+        ${!f.folder?`<span class="rd" onclick="dlFile('${f.id}','${esc(f.name)}',event)" title="Download">⬇</span>`:'<span class="rd" style="opacity:0;pointer-events:none"></span>'}
+      </div>`).join('')}
+    </div>`;
+  }
+}
+
+function clickItem(id,name,isFolder,e){
+  if(selId){ const o=document.getElementById('fc'+selId); if(o) o.classList.remove('selected'); }
+  selId=id;
+  document.getElementById('fc'+id)?.classList.add('selected');
+  if(isFolder){ path.push({id,name}); loadFolder(id); }
+}
+
+async function dlFile(id,name,e){
+  e.stopPropagation();
+  toast(`⬇️ Preparing: ${name}`);
+  try{
+    const d = await gGet(`https://graph.microsoft.com/v1.0/me/drive/items/${id}?select=@microsoft.graph.downloadUrl,name`);
+    const url = d['@microsoft.graph.downloadUrl'];
+    if(url){ const a=document.createElement('a'); a.href=url; a.download=name; a.target='_blank'; document.body.appendChild(a); a.click(); document.body.removeChild(a); toast(`✅ Downloading: ${name}`); }
+    else toast('⚠️ Download URL not available');
+  }catch(e){ toast(`❌ ${e.message}`); }
+}
+
+/* Path */
+function renderPath(){
+  const el = document.getElementById('od-path');
+  el.innerHTML = path.map((p,i)=>{
+    const last = i===path.length-1;
+    return `${i>0?'<span class="od-path-sep">›</span>':''}<span class="crumb${last?' last':''}" ${last?'':'onclick="navTo('+i+')"'}>${p.name}</span>`;
+  }).join('');
+}
+function navTo(i){ path=path.slice(0,i+1); loadFolder(path[path.length-1].id); }
+
+function setView(v){
+  view=v;
+  document.getElementById('btn-grid').classList.toggle('active',v==='grid');
+  document.getElementById('btn-list').classList.toggle('active',v==='list');
+  const q=document.getElementById('od-search').value;
+  q.trim()?onSearch(q):loadFolder(path[path.length-1].id);
+}
+
+/* ── UI HELPERS ── */
+function setState(s){
+  ['connect','loading','error','ui'].forEach(k=>{
+    document.getElementById('s-'+k).style.display = k===s?(s==='ui'?'flex':'flex'):'none';
+  });
+}
+function setLoadingText(t){ document.getElementById('s-loading-text').textContent=t; }
+function showErr(msg){ setState('error'); document.getElementById('s-error-detail').textContent=msg||'Unknown error'; }
+function showFilesSpinner(){ document.getElementById('od-files').innerHTML=`<div class="od-loading-inline"><div class="spinner"></div><span>Loading…</span></div>`; }
+function setPill(on){
+  const p=document.getElementById('od-pill');
+  p.className=`status-pill ${on?'on':'off'}`;
+  document.getElementById('od-pill-label').textContent=`OneDrive: ${on?'Active':'Disconnected'}`;
+}
+
+/* File helpers */
+function fIcon(f){ if(f.folder)return'📁'; const e=(f.name.split('.').pop()||'').toLowerCase(); return({pdf:'📋',docx:'📄',doc:'📄',xlsx:'📊',xls:'📊',pptx:'📑',ppt:'📑',zip:'🗜️',rar:'🗜️',png:'🖼️',jpg:'🖼️',jpeg:'🖼️',gif:'🖼️',mp4:'🎬',mov:'🎬',mp3:'🎵',txt:'📝',csv:'📊',json:'🔧',js:'🔧',ts:'🔧',html:'🌐',css:'🎨'}[e]||'📄'); }
+function fSize(b){ if(!b)return'–'; if(b<1024)return b+'B'; if(b<1048576)return(b/1024).toFixed(0)+'KB'; if(b<1073741824)return(b/1048576).toFixed(1)+'MB'; return(b/1073741824).toFixed(1)+'GB'; }
+function fDate(s){ if(!s)return'–'; const d=new Date(s); return d.toLocaleDateString('en-AU',{day:'numeric',month:'short'}); }
+function esc(s){ return s.replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+
+/* ── TASKS ── */
+function renderTasks(){
+  document.getElementById('task-list').innerHTML=TASKS.map(t=>`
+    <div class="task-item" onclick="toggleTask(${t.id})">
+      <div class="task-cb${t.done?' done':''}" id="cb${t.id}"></div>
+      <div class="task-name-wrap"><div class="task-name${t.done?' done':''}" id="tn${t.id}">${t.name}</div></div>
+      <span class="task-pri pri-${t.pri}">${t.pri==='h'?'High':t.pri==='m'?'Med':'Low'}</span>
+    </div>`).join('');
+}
+function toggleTask(id){ const t=TASKS.find(x=>x.id===id); t.done=!t.done; document.getElementById('cb'+id).classList.toggle('done',t.done); document.getElementById('tn'+id).classList.toggle('done',t.done); }
+
+/* ── TOAST ── */
+let tTimer;
+function toast(msg){ const e=document.getElementById('toast'); e.textContent=msg; e.classList.add('show'); clearTimeout(tTimer); tTimer=setTimeout(()=>e.classList.remove('show'),2800); }
+</script>
+</body>
+</html>
