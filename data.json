@@ -60,7 +60,8 @@
       "name": "Pooya Mirzapanah",
       "role": "Project Manager",
       "status": "online",
-      "color": "#1565c0"
+      "color": "#1565c0",
+      "phone": "+61434019993"
     },
     {
       "id": 2,
@@ -77,5 +78,31 @@
       "color": "#e65100"
     }
   ],
-  "savedAt": "2026-03-09T20:38:24.746Z"
+  "taskStatuses": [
+    {
+      "id": "pending",
+      "label": "Pending",
+      "color": "var(--gold)",
+      "done": false
+    },
+    {
+      "id": "in-progress",
+      "label": "In Progress",
+      "color": "var(--blue)",
+      "done": false
+    },
+    {
+      "id": "done",
+      "label": "Done",
+      "color": "var(--green)",
+      "done": true
+    },
+    {
+      "id": "blocked",
+      "label": "Blocked",
+      "color": "var(--red)",
+      "done": false
+    }
+  ],
+  "savedAt": "2026-03-09T20:53:54.139Z"
 }
