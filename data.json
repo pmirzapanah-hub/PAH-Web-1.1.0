@@ -33,14 +33,6 @@
       "status": "done"
     },
     {
-      "id": 5,
-      "name": "Prepare compliance checklist",
-      "done": false,
-      "pri": "m",
-      "due": "2026-03-11",
-      "status": "pending"
-    },
-    {
       "id": 6,
       "name": "Archive sprint files",
       "done": false,
@@ -119,5 +111,5 @@
       "done": false
     }
   ],
-  "savedAt": "2026-03-10T20:05:59.533Z"
+  "savedAt": "2026-03-10T20:06:03.202Z"
 }
