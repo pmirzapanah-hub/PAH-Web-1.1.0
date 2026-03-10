@@ -25,14 +25,6 @@
       "status": "pending"
     },
     {
-      "id": 4,
-      "name": "Schedule team stand-up",
-      "done": true,
-      "pri": "l",
-      "due": "2026-03-09",
-      "status": "done"
-    },
-    {
       "id": 6,
       "name": "Archive sprint files",
       "done": false,
@@ -111,5 +103,5 @@
       "done": false
     }
   ],
-  "savedAt": "2026-03-10T20:06:03.202Z"
+  "savedAt": "2026-03-10T20:20:02.837Z"
 }
