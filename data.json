@@ -86,10 +86,10 @@
   ],
   "users": [
     {
-      "username": "Payam",
-      "passwordHash": "f71803dac2510d74c33947151d3f6f2dda3a83540651a9fef22e1ee7644c0662",
+      "username": "VIP",
+      "passwordHash": "de425d122023f8d48b93b026049b1bb57924bd77adf59fcbffbd94c4c6c30180",
       "role": "manager"
     }
   ],
-  "savedAt": "2026-03-10T21:53:04.396Z"
+  "savedAt": "2026-03-10T21:55:52.881Z"
 }
