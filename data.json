@@ -59,14 +59,6 @@
       "due": "2026-03-20"
     },
     {
-      "id": 2,
-      "name": "Client Portal",
-      "desc": "External client access",
-      "progress": 45,
-      "status": "at-risk",
-      "due": "2026-03-15"
-    },
-    {
       "id": 3,
       "name": "Data Migration",
       "desc": "Legacy system transfer",
@@ -163,5 +155,5 @@
       "role": "viewer"
     }
   ],
-  "savedAt": "2026-03-11T06:12:05.101Z"
+  "savedAt": "2026-03-11T06:17:44.442Z"
 }
