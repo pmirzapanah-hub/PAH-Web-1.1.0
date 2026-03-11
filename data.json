@@ -87,13 +87,6 @@
       "role": "QA Engineer",
       "status": "online",
       "color": "#6a1b9a"
-    },
-    {
-      "id": 5,
-      "name": "Emma Wilson",
-      "role": "Business Analyst",
-      "status": "offline",
-      "color": "#455a64"
     }
   ],
   "taskStatuses": [
@@ -139,5 +132,5 @@
       "role": "viewer"
     }
   ],
-  "savedAt": "2026-03-11T06:21:41.120Z"
+  "savedAt": "2026-03-11T06:22:27.103Z"
 }
