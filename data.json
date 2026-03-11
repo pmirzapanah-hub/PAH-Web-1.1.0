@@ -80,13 +80,6 @@
       "role": "Designer",
       "status": "away",
       "color": "#e65100"
-    },
-    {
-      "id": 4,
-      "name": "David Park",
-      "role": "QA Engineer",
-      "status": "online",
-      "color": "#6a1b9a"
     }
   ],
   "taskStatuses": [
@@ -132,5 +125,5 @@
       "role": "viewer"
     }
   ],
-  "savedAt": "2026-03-11T06:22:27.103Z"
+  "savedAt": "2026-03-11T06:22:29.417Z"
 }
