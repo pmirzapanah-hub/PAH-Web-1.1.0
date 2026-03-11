@@ -17,14 +17,6 @@
       "progress": 45,
       "status": "at-risk",
       "due": "2026-03-15"
-    },
-    {
-      "id": 4,
-      "name": "Compliance Audit",
-      "desc": "Annual review prep",
-      "progress": 30,
-      "status": "overdue",
-      "due": "2026-03-05"
     }
   ],
   "team": [
@@ -97,5 +89,5 @@
       "role": "manager"
     }
   ],
-  "savedAt": "2026-03-11T04:04:46.151Z"
+  "savedAt": "2026-03-11T04:04:48.276Z"
 }
