@@ -156,7 +156,12 @@
       "username": "Payam-VIP",
       "passwordHash": "1efeb108b9b1edb37aade998b070afff17c89460790d87615d54cc3caaf81eef",
       "role": "admin"
+    },
+    {
+      "username": "Shahram-VIP",
+      "passwordHash": "1efeb108b9b1edb37aade998b070afff17c89460790d87615d54cc3caaf81eef",
+      "role": "viewer"
     }
   ],
-  "savedAt": "2026-03-11T06:11:42.932Z"
+  "savedAt": "2026-03-11T06:12:05.101Z"
 }
