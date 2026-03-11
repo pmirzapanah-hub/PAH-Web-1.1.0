@@ -5,10 +5,49 @@
       "name": "Review Q1 budget report",
       "done": true,
       "pri": "h",
-      "due": "2026-03-12",
+      "due": "2026-03-09",
       "status": "done"
     },
-   
+    {
+      "id": 2,
+      "name": "Send stakeholder update",
+      "done": false,
+      "pri": "h",
+      "due": "2026-03-09",
+      "status": "pending"
+    },
+    {
+      "id": 3,
+      "name": "Update project timeline",
+      "done": false,
+      "pri": "m",
+      "due": "2026-03-10",
+      "status": "pending"
+    },
+    {
+      "id": 4,
+      "name": "Schedule team stand-up",
+      "done": true,
+      "pri": "l",
+      "due": "2026-03-09",
+      "status": "done"
+    },
+    {
+      "id": 5,
+      "name": "Prepare compliance checklist",
+      "done": false,
+      "pri": "m",
+      "due": "2026-03-11",
+      "status": "pending"
+    },
+    {
+      "id": 6,
+      "name": "Archive sprint files",
+      "done": false,
+      "pri": "l",
+      "due": "2026-03-12",
+      "status": "pending"
+    }
   ],
   "projects": [
     {
@@ -18,6 +57,67 @@
       "progress": 78,
       "status": "on-track",
       "due": "2026-03-20"
+    },
+    {
+      "id": 2,
+      "name": "Client Portal",
+      "desc": "External client access",
+      "progress": 45,
+      "status": "at-risk",
+      "due": "2026-03-15"
+    },
+    {
+      "id": 3,
+      "name": "Data Migration",
+      "desc": "Legacy system transfer",
+      "progress": 60,
+      "status": "in-progress",
+      "due": "2026-04-01"
+    },
+    {
+      "id": 4,
+      "name": "Compliance Audit",
+      "desc": "Annual review prep",
+      "progress": 30,
+      "status": "overdue",
+      "due": "2026-03-05"
+    }
+  ],
+  "team": [
+    {
+      "id": 1,
+      "name": "Pooya",
+      "role": "Project Manager",
+      "status": "away",
+      "color": "#1565c0"
+    },
+    {
+      "id": 2,
+      "name": "Ben Carter",
+      "role": "Developer",
+      "status": "online",
+      "color": "#2e7d32"
+    },
+    {
+      "id": 3,
+      "name": "Clara Lee",
+      "role": "Designer",
+      "status": "away",
+      "color": "#e65100"
+    },
+    {
+      "id": 4,
+      "name": "David Park",
+      "role": "QA Engineer",
+      "status": "online",
+      "color": "#6a1b9a"
+    },
+    {
+      "id": 5,
+      "name": "Emma Wilson",
+      "role": "Business Analyst",
+      "status": "offline",
+      "color": "#455a64"
     }
   ],
   "taskStatuses": [
@@ -48,20 +148,10 @@
   ],
   "users": [
     {
-      "username": "VIP",
-      "passwordHash": "f0d42f93f5f2e80c6efc6a327fe1e5a4046ed28c72ae77d37f66fe1eacce57df",
-      "role": "manager"
-    },
-    {
-      "username": "Payam-VIP",
-      "passwordHash": "1efeb108b9b1edb37aade998b070afff17c89460790d87615d54cc3caaf81eef",
+      "username": "test",
+      "passwordHash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
       "role": "admin"
-    },
-    {
-      "username": "Shahram-VIP",
-      "passwordHash": "1efeb108b9b1edb37aade998b070afff17c89460790d87615d54cc3caaf81eef",
-      "role": "viewer"
     }
   ],
-  "savedAt": "2026-03-11T06:22:29.417Z"
+  "savedAt": "2026-03-11T23:06:32.020Z"
 }
