@@ -8,46 +8,7 @@
       "due": "2026-03-12",
       "status": "done"
     },
-    {
-      "id": 2,
-      "name": "Send stakeholder update",
-      "done": false,
-      "pri": "h",
-      "due": "2026-03-09",
-      "status": "pending"
-    },
-    {
-      "id": 3,
-      "name": "Update project timeline",
-      "done": false,
-      "pri": "m",
-      "due": "2026-03-10",
-      "status": "pending"
-    },
-    {
-      "id": 4,
-      "name": "Schedule team stand-up",
-      "done": true,
-      "pri": "l",
-      "due": "2026-03-09",
-      "status": "done"
-    },
-    {
-      "id": 5,
-      "name": "Prepare compliance checklist",
-      "done": false,
-      "pri": "m",
-      "due": "2026-03-11",
-      "status": "pending"
-    },
-    {
-      "id": 6,
-      "name": "Archive sprint files",
-      "done": false,
-      "pri": "l",
-      "due": "2026-03-12",
-      "status": "pending"
-    }
+   
   ],
   "projects": [
     {
@@ -57,29 +18,6 @@
       "progress": 78,
       "status": "on-track",
       "due": "2026-03-20"
-    }
-  ],
-  "team": [
-    {
-      "id": 1,
-      "name": "Alice Morgan",
-      "role": "Project Manager",
-      "status": "online",
-      "color": "#1565c0"
-    },
-    {
-      "id": 2,
-      "name": "Ben Carter",
-      "role": "Developer",
-      "status": "online",
-      "color": "#2e7d32"
-    },
-    {
-      "id": 3,
-      "name": "Clara Lee",
-      "role": "Designer",
-      "status": "away",
-      "color": "#e65100"
     }
   ],
   "taskStatuses": [
