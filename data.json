@@ -3,57 +3,59 @@
     {
       "id": 1,
       "name": "Review Q1 budget report",
-      "done": false,
+      "done": true,
       "pri": "h",
       "due": "2026-03-09",
-      "status": "blocked"
-    }
-  ],
-  "projects": [
-    {
-      "id": 2,
-      "name": "Client Portal",
-      "desc": "External client access",
-      "progress": 45,
-      "status": "at-risk",
-      "due": "2026-03-15"
-    }
-  ],
-  "team": [
-    {
-      "id": 1,
-      "name": "Alice Morgan",
-      "role": "Project Manager",
-      "status": "online",
-      "color": "#1565c0"
+      "status": "done"
     },
     {
       "id": 2,
-      "name": "Ben Carter",
-      "role": "Developer",
+      "name": "Send stakeholder update",
+      "done": false,
+      "pri": "h",
+      "due": "2026-03-09",
+      "status": "pending"
+    },
+    {
+      "id": 3,
+      "name": "Update project timeline",
+      "done": false,
+      "pri": "m",
+      "due": "2026-03-10",
+      "status": "pending"
+    },
+    {
+      "id": 6,
+      "name": "Archive sprint files",
+      "done": false,
+      "pri": "l",
+      "due": "2026-03-12",
+      "status": "pending"
+    }
+  ],
+  "projects": [],
+  "team": [
+    {
+      "id": 1,
+      "name": "Pooya Mirzapanah",
+      "role": "Project Manager",
+      "status": "online",
+      "color": "#1565c0",
+      "phone": "+61434019993"
+    },
+    {
+      "id": 2,
+      "name": "Payam Mirzapanah",
+      "role": "Project Manager",
       "status": "online",
       "color": "#2e7d32"
     },
     {
       "id": 3,
-      "name": "Clara Lee",
+      "name": "Shahram Es'haghi",
       "role": "Designer",
-      "status": "away",
-      "color": "#e65100"
-    },
-    {
-      "id": 4,
-      "name": "David Park",
-      "role": "QA Engineer",
       "status": "online",
-      "color": "#6a1b9a"
-    },
-    {
-      "id": 5,
-      "name": "Emma Wilson",
-      "role": "Business Analyst",
-      "status": "offline",
-      "color": "#455a64"
+      "color": "#e65100"
     }
   ],
   "taskStatuses": [
@@ -85,9 +87,9 @@
   "users": [
     {
       "username": "VIP",
-      "passwordHash": "de425d122023f8d48b93b026049b1bb57924bd77adf59fcbffbd94c4c6c30180",
+      "passwordHash": "f0d42f93f5f2e80c6efc6a327fe1e5a4046ed28c72ae77d37f66fe1eacce57df",
       "role": "manager"
     }
   ],
-  "savedAt": "2026-03-11T04:04:48.276Z"
+  "savedAt": "2026-03-11T06:02:24.440Z"
 }
