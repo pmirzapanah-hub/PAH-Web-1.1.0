@@ -9,14 +9,6 @@
       "status": "blocked"
     },
     {
-      "id": 2,
-      "name": "Send stakeholder update",
-      "done": false,
-      "pri": "h",
-      "due": "2026-03-09",
-      "status": "pending"
-    },
-    {
       "id": 3,
       "name": "Update project timeline",
       "done": false,
@@ -153,5 +145,5 @@
       "role": "manager"
     }
   ],
-  "savedAt": "2026-03-11T04:04:01.615Z"
+  "savedAt": "2026-03-11T04:04:12.829Z"
 }
