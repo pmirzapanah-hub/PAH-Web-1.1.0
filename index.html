@@ -84,6 +84,10 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
 /* ── TOPBAR ── */
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:60px;flex-shrink:0;background:linear-gradient(90deg,#060c1a,#0a1428 50%,#060c1a);border-bottom:1px solid var(--border);position:relative;z-index:10}
 .topbar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--blue),transparent)}
+
+/* Safe-area support for notch/status-bar on mobile */
+.topbar{padding-top:env(safe-area-inset-top,0);}
+#main-wrap{padding-top:env(safe-area-inset-top,0);}
 .brand{display:flex;align-items:center;gap:12px}
 .brand img{width:40px;height:40px;object-fit:contain;filter:drop-shadow(0 0 10px rgba(56,139,253,0.6));animation:logoPulse 3s ease-in-out infinite}
 @keyframes logoPulse{0%,100%{filter:drop-shadow(0 0 8px rgba(56,139,253,0.5))}50%{filter:drop-shadow(0 0 18px rgba(56,139,253,0.9))}}
