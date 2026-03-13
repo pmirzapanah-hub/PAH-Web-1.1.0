@@ -1152,7 +1152,7 @@ function openAddUserModal(){
 function openEditUserModal(idx){
   const isBuiltIn = idx < 0;
   const u = isBuiltIn ? DEFAULT_USERS[0] : USERS[idx];
-  const role=currentUser?.role;
+  const role=(currentUser?.role||'').toString().toLowerCase();
   const isAdmin=role==='admin';
   const isManager=role==='manager';
   const isViewer=role==='viewer';
@@ -1205,9 +1205,10 @@ async function saveUser(){
   const isEdit = idxRaw!=='';
   const idx=parseInt(idxRaw,10);
   const isBuiltIn = isEdit && idx<0;
-  const isAdmin = currentUser?.role==='admin';
-  const isManager = currentUser?.role==='manager';
-  const isViewer = currentUser?.role==='viewer';
+  const currentRole=(currentUser?.role||'').toString().toLowerCase();
+  const isAdmin = currentRole==='admin';
+  const isManager = currentRole==='manager';
+  const isViewer = currentRole==='viewer';
 
   if(!username){ toast('⚠️ Username required'); return; }
   if(!isEdit && !isAdmin){ toast('⚠️ Only admins can add users'); return; }
@@ -1224,7 +1225,8 @@ async function saveUser(){
     if(!isAdmin && !isManager && !isSelf){ toast('⚠️ You cannot edit other accounts'); return; }
 
     // Managers cannot change admin accounts (even password).
-    if(isManager && u.role==='admin'){ toast('⚠️ Managers cannot modify admin accounts'); return; }
+    const targetRole=(u.role||'').toString().toLowerCase();
+    if(isManager && targetRole==='admin'){ toast('⚠️ Managers cannot modify admin accounts'); return; }
 
     // Managers can only reset passwords; viewers can only reset their own password.
     if(isAdmin){
@@ -1243,7 +1245,8 @@ async function saveUser(){
 }
 
 async function deleteUser(idx, name){
-  if(currentUser?.role!=='admin'){ toast('⚠️ Only admins can delete users'); return; }
+  const role=(currentUser?.role||'').toString().toLowerCase();
+  if(role!=='admin'){ toast('⚠️ Only admins can delete users'); return; }
   if(!confirm('Delete user "'+name+'"?')) return;
   USERS.splice(idx,1);
   await saveUsersToGitHub();
@@ -1493,6 +1496,63 @@ function defaultTeam(){return[
 
 let nextId={task:100,project:100,team:100};
 
+// Reminder timers per task id
+const reminderTimers = {};
+
+function requestNotificationPermission(){
+  if(!('Notification' in window)) return;
+  if(Notification.permission==='default') Notification.requestPermission();
+}
+
+function notify(title, body){
+  if('Notification' in window && Notification.permission==='granted'){
+    new Notification(title,{body,icon:'',silent:false});
+  } else {
+    toast(`🔔 ${title}: ${body}`);
+  }
+}
+
+function clearTaskReminders(taskId){
+  if(!reminderTimers[taskId]) return;
+  reminderTimers[taskId].forEach(id=>clearTimeout(id));
+  delete reminderTimers[taskId];
+}
+
+function scheduleTaskReminders(task){
+  clearTaskReminders(task.id);
+  if(!task.due) return;
+  const due = new Date(task.due);
+  if(isNaN(due)) return;
+  const now = Date.now();
+  const schedule = [
+    {label:'Due now', offset:0},
+    {label:'Due in 1 day', offset:24*60*60*1000},
+    {label:'Due in 2 days', offset:2*24*60*60*1000},
+    {label:'Due in 1 week', offset:7*24*60*60*1000},
+  ];
+  reminderTimers[task.id]=[];
+  schedule.forEach(({label,offset})=>{
+    const when = due.getTime() - offset;
+    const delay = when - now;
+    if(delay<=0) return; // past
+    const timer = setTimeout(()=>{
+      // Only notify if task still exists and due still matches
+      const current = TASKS.find(t=>t.id===task.id);
+      if(!current) return;
+      if(current.due!==task.due) return; // due changed
+      if(current.done) return; // skip done
+      notify(`Task reminder`, `${task.name} — ${label}`);
+    }, delay);
+    reminderTimers[task.id].push(timer);
+  });
+}
+
+function setupTaskReminders(){
+  requestNotificationPermission();
+  Object.keys(reminderTimers).forEach(id=>clearTaskReminders(id));
+  TASKS.forEach(t=>{ if(!t.done) scheduleTaskReminders(t); });
+}
+
 /* ══ INIT ══ */
 function migrateTasks(){
   // Migrate tasks that have old boolean done field but no status field
@@ -1514,9 +1574,10 @@ window.addEventListener('DOMContentLoaded',async()=>{
   // Check for existing session — skip login if still valid
   if(checkExistingSession()){
     renderAll();
+    setupTaskReminders();
     updateGhTokenUI();
     const ghLoaded = await loadFromGitHub();
-    if(ghLoaded){ save(); renderAll(); }
+    if(ghLoaded){ save(); renderAll(); setupTaskReminders(); }
   } else {
     // Show login — app loads data after successful login
     renderAll(); // pre-load in background
@@ -1849,7 +1910,7 @@ function saveTask(){
   if(taskOdFid) data.odFolderId=taskOdFid;
   if(id){Object.assign(TASKS.find(t=>t.id==id),data);toast('✅ Task updated');}
   else{TASKS.push({id:++nextId.task,...data});toast('✅ Task added');}
-  save(); saveToGitHub(); renderAll(); closeModal('task-modal');
+  save(); saveToGitHub(); renderAll(); setupTaskReminders(); closeModal('task-modal');
 }
 
 /* ══ PROJECTS ══ */
