@@ -75,13 +75,6 @@
       "status": "online",
       "color": "#2e7d32",
       "phone": "0451147742"
-    },
-    {
-      "id": 3,
-      "name": "Clara Lee",
-      "role": "Designer",
-      "status": "away",
-      "color": "#e65100"
     }
   ],
   "taskStatuses": [
@@ -117,5 +110,5 @@
       "role": "admin"
     }
   ],
-  "savedAt": "2026-03-13T22:31:07.752Z"
+  "savedAt": "2026-03-13T22:31:12.224Z"
 }
