@@ -1188,6 +1188,12 @@ function openEditUserModal(idx){
     roleEl.disabled = true;
   }
 
+  // Managers cannot edit Admin accounts (including password) to prevent privilege escalation.
+  if(isManager && u.role==='admin'){
+    toast('⚠️ Managers cannot modify admin accounts');
+    return;
+  }
+
   openModal('add-user-modal');
 }
 
@@ -1216,6 +1222,10 @@ async function saveUser(){
     const isSelf = currentUser?.username===u.username;
     if(isViewer && !isSelf){ toast('⚠️ You cannot edit other accounts'); return; }
     if(!isAdmin && !isManager && !isSelf){ toast('⚠️ You cannot edit other accounts'); return; }
+
+    // Managers cannot change admin accounts (even password).
+    if(isManager && u.role==='admin'){ toast('⚠️ Managers cannot modify admin accounts'); return; }
+
     // Managers can only reset passwords; viewers can only reset their own password.
     if(isAdmin){
       u.username=username; u.role=role;
