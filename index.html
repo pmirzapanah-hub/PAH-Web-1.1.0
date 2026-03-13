@@ -1111,12 +1111,16 @@ function renderUsersList(){
   const allUsers=[...DEFAULT_USERS,...USERS];
   el.innerHTML=allUsers.map((u,i)=>{
     const isSelf = currentUser && u.username===currentUser.username;
-    const canEdit = (isAdmin) || (isManager) || (isViewer && isSelf);
+    const canEdit = isAdmin || isManager || (isViewer && isSelf);
     const canDelete = isAdmin;
     const index = u.builtIn ? -1 : i - DEFAULT_USERS.length;
-    const editBtn = ((u.builtIn && isSelf && isAdmin) || (!u.builtIn && canEdit))
+
+    // Only show edit for viewers on their own account, managers/admins can edit any
+    const showEdit = (isAdmin || isManager) || (isViewer && isSelf);
+    const editBtn = showEdit
       ? `<button class="btn btn-ghost btn-sm" onclick="openEditUserModal(${index})">✏️</button>`
       : '';
+
     const deleteBtn = (!u.builtIn && canDelete)
       ? `<button class="btn btn-danger btn-sm" onclick="deleteUser(${index},'${u.username}')">🗑️</button>`
       : '';
@@ -1148,6 +1152,22 @@ function openAddUserModal(){
 function openEditUserModal(idx){
   const isBuiltIn = idx < 0;
   const u = isBuiltIn ? DEFAULT_USERS[0] : USERS[idx];
+  const role=currentUser?.role;
+  const isAdmin=role==='admin';
+  const isManager=role==='manager';
+  const isViewer=role==='viewer';
+  const isSelf=currentUser?.username===u.username;
+
+  // Only admin/manager can edit other users; viewer can only edit their own password.
+  if(isViewer && !isSelf){
+    toast('⚠️ Viewers cannot edit other users');
+    return;
+  }
+  if(!isAdmin && !isManager && !isSelf){
+    toast('⚠️ You do not have permission to edit this user');
+    return;
+  }
+
   document.getElementById('user-modal-title').textContent='Edit User';
   document.getElementById('user-modal-icon').textContent='✏️';
   document.getElementById('user-edit-idx').value=idx;
@@ -1157,15 +1177,12 @@ function openEditUserModal(idx){
 
   const nameEl=document.getElementById('new-user-name');
   const roleEl=document.getElementById('new-user-role');
-  const isAdmin=currentUser?.role==='admin';
-  const isManager=currentUser?.role==='manager';
-  const isSelf=currentUser?.username===u.username;
 
-  // Only admin can modify username/role. Managers/viewers can only reset password.
-  nameEl.disabled = !(isAdmin);
-  roleEl.disabled = !(isAdmin);
+  // Only admins can change username or role.
+  nameEl.disabled = !isAdmin;
+  roleEl.disabled = !isAdmin;
 
-  // If this is a built-in user, prevent role/username changes unless admin.
+  // Built-in user must not be editable except by admin.
   if(isBuiltIn && !isAdmin){
     nameEl.disabled = true;
     roleEl.disabled = true;
