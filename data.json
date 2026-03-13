@@ -5,7 +5,7 @@
       "name": "Review Q1 budget report",
       "done": true,
       "pri": "h",
-      "due": "2026-03-09",
+      "due": "2026-03-12",
       "status": "done"
     },
     {
@@ -57,38 +57,14 @@
       "progress": 78,
       "status": "on-track",
       "due": "2026-03-20"
-    },
-    {
-      "id": 2,
-      "name": "Client Portal",
-      "desc": "External client access",
-      "progress": 45,
-      "status": "at-risk",
-      "due": "2026-03-15"
-    },
-    {
-      "id": 3,
-      "name": "Data Migration",
-      "desc": "Legacy system transfer",
-      "progress": 60,
-      "status": "in-progress",
-      "due": "2026-04-01"
-    },
-    {
-      "id": 4,
-      "name": "Compliance Audit",
-      "desc": "Annual review prep",
-      "progress": 30,
-      "status": "overdue",
-      "due": "2026-03-05"
     }
   ],
   "team": [
     {
       "id": 1,
-      "name": "Pooya",
+      "name": "Alice Morgan",
       "role": "Project Manager",
-      "status": "away",
+      "status": "online",
       "color": "#1565c0"
     },
     {
@@ -104,20 +80,6 @@
       "role": "Designer",
       "status": "away",
       "color": "#e65100"
-    },
-    {
-      "id": 4,
-      "name": "David Park",
-      "role": "QA Engineer",
-      "status": "online",
-      "color": "#6a1b9a"
-    },
-    {
-      "id": 5,
-      "name": "Emma Wilson",
-      "role": "Business Analyst",
-      "status": "offline",
-      "color": "#455a64"
     }
   ],
   "taskStatuses": [
@@ -148,10 +110,10 @@
   ],
   "users": [
     {
-      "username": "test_1-6",
+      "username": "test",
       "passwordHash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
       "role": "admin"
     }
   ],
-  "savedAt": "2026-03-12T04:10:10.216Z"
+  "savedAt": "2026-03-13T07:57:27.163Z"
 }
