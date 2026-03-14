@@ -110,13 +110,6 @@
       "role": "Developer",
       "status": "online",
       "color": "#2e7d32"
-    },
-    {
-      "id": 3,
-      "name": "Clara Lee",
-      "role": "Designer",
-      "status": "away",
-      "color": "#e65100"
     }
   ],
   "taskStatuses": [
@@ -146,5 +139,5 @@
     }
   ],
   "users": [],
-  "savedAt": "2026-03-14T00:26:45.027Z"
+  "savedAt": "2026-03-14T00:29:15.810Z"
 }
