@@ -1,146 +1,119 @@
 {
   "tasks": [
     {
-      "id": 1,
+      "id": "t1",
       "name": "Review Q1 budget report",
+      "priority": "high",
+      "status": "done",
       "done": true,
-      "pri": "h",
-      "due": "2026-03-12",
-      "status": "done"
+      "due": "2026-03-09"
     },
     {
-      "id": 2,
+      "id": "t2",
       "name": "Send stakeholder update",
-      "done": false,
-      "pri": "h",
-      "due": "2026-03-09",
-      "status": "pending"
-    },
-    {
-      "id": 3,
-      "name": "Update project timeline",
-      "done": false,
-      "pri": "m",
-      "due": "2026-03-10",
-      "status": "pending"
-    },
-    {
-      "id": 4,
-      "name": "Schedule team stand-up",
-      "done": true,
-      "pri": "l",
-      "due": "2026-03-09",
-      "status": "done"
-    },
-    {
-      "id": 5,
-      "name": "Prepare compliance checklist",
-      "done": false,
-      "pri": "m",
-      "due": "2026-03-11",
-      "status": "pending"
-    },
-    {
-      "id": 6,
-      "name": "Archive sprint files",
-      "done": false,
-      "pri": "l",
-      "due": "2026-03-12",
-      "status": "pending"
-    },
-    {
-      "id": 101,
-      "name": "Vahid Towoong",
-      "pri": "m",
-      "due": "2026-03-15",
+      "priority": "high",
       "status": "pending",
       "done": false,
-      "odFolderId": "9446C2B191592985!55138"
+      "due": "2026-03-09"
+    },
+    {
+      "id": "t3",
+      "name": "Update project timeline",
+      "priority": "medium",
+      "status": "pending",
+      "done": false,
+      "due": "2026-03-10"
+    },
+    {
+      "id": "t4",
+      "name": "Schedule team stand-up",
+      "priority": "low",
+      "status": "done",
+      "done": true,
+      "due": "2026-03-09"
+    },
+    {
+      "id": "t5",
+      "name": "Prepare compliance checklist",
+      "priority": "medium",
+      "status": "pending",
+      "done": false,
+      "due": "2026-03-11"
+    },
+    {
+      "id": "t6",
+      "name": "Archive sprint files",
+      "priority": "low",
+      "status": "pending",
+      "done": false,
+      "due": "2026-03-12"
     }
   ],
   "projects": [
     {
-      "id": 1,
+      "id": "p1",
       "name": "PAH Web v1.1",
-      "desc": "Admin panel upgrade",
+      "description": "Admin panel upgrade",
       "progress": 78,
-      "status": "on-track",
-      "due": "2026-03-20"
-    },
-    {
-      "id": 101,
-      "name": "12345678 - pooya",
-      "desc": "Linked from OneDrive",
-      "progress": 0,
-      "status": "in-progress",
-      "due": "2026-03-15",
-      "odFolderId": "9446C2B191592985!s016d53515c454854a87f811ed3a67f20"
-    },
-    {
-      "id": 101,
-      "name": "38231161 - Vahid",
-      "desc": "Linked from OneDrive",
-      "progress": 0,
-      "status": "in-progress",
-      "due": "2026-03-15",
-      "odFolderId": "9446C2B191592985!15160"
+      "status": "active"
     }
   ],
   "team": [
     {
-      "id": 101,
+      "id": "tm1",
       "name": "Pooya Mirzapanah",
-      "role": "Admin",
-      "phone": "+61434019993",
+      "role": "Project Manager",
       "status": "online",
-      "color": "#1565c0"
+      "phone": "+61434019993"
     },
     {
-      "id": 102,
-      "name": "pooya m",
-      "role": "",
-      "phone": "",
+      "id": "tm2",
+      "name": "Payam Mirzapanah",
+      "role": "Project Manager",
       "status": "online",
-      "color": "#1565c0"
+      "phone": ""
+    },
+    {
+      "id": "tm3",
+      "name": "Shahram Es'haghi",
+      "role": "Designer",
+      "status": "online",
+      "phone": ""
     }
   ],
   "taskStatuses": [
     {
       "id": "pending",
       "label": "Pending",
-      "color": "var(--gold)",
-      "done": false
+      "done": false,
+      "color": "#f0c060"
     },
     {
-      "id": "in-progress",
+      "id": "inprogress",
       "label": "In Progress",
-      "color": "var(--blue)",
-      "done": false
+      "done": false,
+      "color": "#388bfd"
     },
     {
       "id": "done",
       "label": "Done",
-      "color": "var(--green)",
-      "done": true
+      "done": true,
+      "color": "#3fb950"
     },
     {
       "id": "blocked",
       "label": "Blocked",
-      "color": "var(--red)",
-      "done": false
+      "done": false,
+      "color": "#f85149"
     }
   ],
   "users": [
     {
-      "username": "Payam_vip",
-      "passwordHash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
-      "role": "admin"
-    },
-    {
-      "username": "Shahram_vip",
-      "passwordHash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
-      "role": "manager"
+      "username": "VIP-Cabinets",
+      "passwordHash": "e19bd725e77c0e7bf56670376ddb2d90c32886a6d43bcb016387a9885c638e53",
+      "role": "Admin",
+      "displayName": "VIP Cabinets"
     }
   ],
-  "savedAt": "2026-03-14T00:53:49.755Z"
+  "savedAt": "2026-03-14T00:00:00.000Z"
 }
