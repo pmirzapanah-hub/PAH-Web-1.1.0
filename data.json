@@ -88,14 +88,6 @@
   ],
   "team": [
     {
-      "id": 1,
-      "name": "Payam Mirzapanah",
-      "role": "Project Manager",
-      "status": "online",
-      "color": "#1565c0",
-      "phone": "0403741854"
-    },
-    {
       "id": 2,
       "name": "Ben Carter",
       "role": "Developer",
@@ -149,5 +141,5 @@
       "role": "manager"
     }
   ],
-  "savedAt": "2026-03-14T00:48:35.416Z"
+  "savedAt": "2026-03-14T00:48:43.858Z"
 }
