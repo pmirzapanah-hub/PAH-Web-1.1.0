@@ -989,15 +989,18 @@ async function sha256(str){
 }
 
 // Default admin user (VIP-Cabinets / Admin_vipcabinets) — hash computed at runtime
-const DEFAULT_USERS = [
-  {username:'VIP-Cabinets', passwordHash:'__INIT__', role:'admin', builtIn:true}
-];
 let USERS = [];
 let currentUser = null;
 
 async function initDefaultUsers(){
+  // Ensure VIP-Cabinets built-in user exists in USERS with correct hash
   const hash = await sha256('Admin_vipcabinets');
-  DEFAULT_USERS[0].passwordHash = hash;
+  const existing = USERS.find(u=>u.username==='VIP-Cabinets');
+  if(!existing){
+    USERS.unshift({username:'VIP-Cabinets', passwordHash:hash, role:'admin', builtIn:true});
+  } else if(existing.passwordHash==='__INIT__'){
+    existing.passwordHash = hash;
+  }
 }
 
 async function doLogin(){
@@ -1016,7 +1019,7 @@ async function doLogin(){
   await loadUsersFromGitHub();
 
   const hash = await sha256(password);
-  const allUsers = [...DEFAULT_USERS, ...USERS];
+  const allUsers = USERS;
   const user = allUsers.find(u => u.username.toLowerCase()===username.toLowerCase() && u.passwordHash===hash);
 
   btn.textContent='SIGN IN'; btn.disabled=false;
@@ -1105,12 +1108,12 @@ function renderUsersList(){
   const addBtn=document.getElementById('add-user-btn');
   if(addBtn){ addBtn.style.display = isAdmin ? 'inline-flex' : 'none'; }
 
-  const allUsers=[...DEFAULT_USERS,...USERS];
+  const allUsers=USERS;
   el.innerHTML=allUsers.map((u,i)=>{
     const isSelf = currentUser && u.username===currentUser.username;
     const canEdit = isAdmin || isManager || (isViewer && isSelf);
     const canDelete = isAdmin;
-    const index = u.builtIn ? -1 : i - DEFAULT_USERS.length;
+    const index = u.builtIn ? -1 : i;
 
     // Only show edit for viewers on their own account, managers/admins can edit any
     const showEdit = (isAdmin || isManager) || (isViewer && isSelf);
@@ -1148,7 +1151,7 @@ function openAddUserModal(){
 
 function openEditUserModal(idx){
   const isBuiltIn = idx < 0;
-  const u = isBuiltIn ? DEFAULT_USERS[0] : USERS[idx];
+  const u = isBuiltIn ? USERS.find(u=>u.builtIn) : USERS[idx];
   const role=(currentUser?.role||'').toString().toLowerCase();
   const isAdmin=role==='admin';
   const isManager=role==='manager';
@@ -1212,11 +1215,11 @@ async function saveUser(){
   if(!isEdit && !password){ toast('⚠️ Password required'); return; }
   if(password && password.length<6){ toast('⚠️ Password must be 6+ characters'); return; }
 
-  const allNames=[...DEFAULT_USERS,...USERS];
+  const allNames=USERS;
   if(!isEdit && allNames.find(u=>u.username.toLowerCase()===username.toLowerCase())){ toast('⚠️ Username already exists'); return; }
 
   if(isEdit){
-    const u = isBuiltIn ? DEFAULT_USERS[0] : USERS[idx];
+    const u = isBuiltIn ? USERS.find(u=>u.builtIn) : USERS[idx];
     const isSelf = currentUser?.username===u.username;
     if(isViewer && !isSelf){ toast('⚠️ You cannot edit other accounts'); return; }
     if(!isAdmin && !isManager && !isSelf){ toast('⚠️ You cannot edit other accounts'); return; }
@@ -1317,7 +1320,7 @@ async function changeMyPassword(){
   if(!pw||pw.length<6){ toast('⚠️ Password must be 6+ characters'); return; }
   if(!currentUser){ toast('⚠️ Not signed in'); return; }
   const username=currentUser.username;
-  const all=[...DEFAULT_USERS,...USERS];
+  const all=USERS;
   const u=all.find(x=>x.username===username);
   if(!u){ toast('⚠️ User not found'); return; }
   u.passwordHash=await sha256(pw);
@@ -1450,13 +1453,13 @@ async function loadData(){
   }
 
   try{
-    TASKS        = JSON.parse(localStorage.getItem('pah_tasks'))        || defaultTasks();
-    PROJECTS     = JSON.parse(localStorage.getItem('pah_projects'))     || defaultProjects();
-    TEAM         = JSON.parse(localStorage.getItem('pah_team'))         || defaultTeam();
+    TASKS        = JSON.parse(localStorage.getItem('pah_tasks'))        || [];
+    PROJECTS     = JSON.parse(localStorage.getItem('pah_projects'))     || [];
+    TEAM         = JSON.parse(localStorage.getItem('pah_team'))         || [];
     TASK_STATUSES= JSON.parse(localStorage.getItem('pah_task_statuses'))|| defaultTaskStatuses();
-    USERS        = JSON.parse(localStorage.getItem('pah_users'))        || DEFAULT_USERS;
+    USERS        = JSON.parse(localStorage.getItem('pah_users'))        || [];
   }catch(e){
-    TASKS=defaultTasks(); PROJECTS=defaultProjects(); TEAM=defaultTeam(); TASK_STATUSES=defaultTaskStatuses(); USERS=DEFAULT_USERS;
+    TASKS=[]; PROJECTS=[]; TEAM=[]; TASK_STATUSES=defaultTaskStatuses(); USERS=[];
   }
 }
 
@@ -1577,20 +1580,21 @@ function migrateTasks(){
 }
 
 window.addEventListener('DOMContentLoaded',async()=>{
-  await initDefaultUsers(); // hash default password
-  loadData(); // load localStorage first as fallback
-  migrateTasks(); // migrate old done:bool to new status system
+  loadData();          // load localStorage as immediate fallback
+  migrateTasks();      // migrate old data format
+  await initDefaultUsers(); // ensure built-in user exists
 
-  // Check for existing session — skip login if still valid
   if(checkExistingSession()){
     renderAll();
     setupTaskReminders();
-    // updateGhTokenUI removed
+    // Load fresh data from GitHub — this is the source of truth
     const ghLoaded = await loadFromGitHub();
-    if(ghLoaded){ save(); renderAll(); setupTaskReminders(); }
+    if(ghLoaded){
+      await initDefaultUsers(); // re-ensure after GitHub overwrites USERS
+      save(); renderAll(); setupTaskReminders();
+    }
   } else {
-    // Show login — app loads data after successful login
-    renderAll(); // pre-load in background
+    renderAll(); // pre-render while waiting for login
   }
 
   try{
