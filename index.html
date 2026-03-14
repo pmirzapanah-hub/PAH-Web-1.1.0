@@ -1048,6 +1048,7 @@ function showApp(user){
   document.getElementById('user-avatar').textContent=ini;
   document.getElementById('user-name').textContent=user.username;
   updateGhTokenUI();
+  setupTaskReminders();
 }
 
 function doLogout(){
