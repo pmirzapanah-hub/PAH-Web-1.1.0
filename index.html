@@ -1461,7 +1461,10 @@ async function loadData(){
     PROJECTS     = JSON.parse(localStorage.getItem('pah_projects'))     || defaultProjects();
     TEAM         = JSON.parse(localStorage.getItem('pah_team'))         || defaultTeam();
     TASK_STATUSES= JSON.parse(localStorage.getItem('pah_task_statuses'))|| defaultTaskStatuses();
-  }catch(e){ TASKS=defaultTasks(); PROJECTS=defaultProjects(); TEAM=defaultTeam(); TASK_STATUSES=defaultTaskStatuses(); }
+    USERS        = JSON.parse(localStorage.getItem('pah_users'))        || DEFAULT_USERS;
+  }catch(e){
+    TASKS=defaultTasks(); PROJECTS=defaultProjects(); TEAM=defaultTeam(); TASK_STATUSES=defaultTaskStatuses(); USERS=DEFAULT_USERS;
+  }
 }
 
 async function save(){
@@ -1469,6 +1472,7 @@ async function save(){
   localStorage.setItem('pah_projects',JSON.stringify(PROJECTS));
   localStorage.setItem('pah_team',JSON.stringify(TEAM));
   localStorage.setItem('pah_task_statuses',JSON.stringify(TASK_STATUSES));
+  localStorage.setItem('pah_users',JSON.stringify(USERS));
 
   const tok = sessionStorage.getItem('pah_gh_token');
   if(tok){
@@ -1501,7 +1505,7 @@ function defaultProjects(){return[
   {id:4,name:'Compliance Audit',desc:'Annual review prep',progress:30,status:'overdue',due:'2026-03-05'},
 ];}
 function defaultTeam(){return[
-  {id:1,name:'Payam Mirzaoanah',role:'Project Manager',status:'online',color:'#1565c0'},
+  {id:1,name:'Payam Mirzapanah',role:'Project Manager',status:'online',color:'#1565c0'},
   {id:2,name:'Shahram ES`haghi',role:'Manager',status:'online',color:'#2e7d32'},
   {id:3,name:'Clara Lee',role:'Designer',status:'away',color:'#e65100'},
 
