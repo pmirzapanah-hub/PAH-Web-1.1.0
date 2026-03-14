@@ -1048,7 +1048,6 @@ function showApp(user){
   document.getElementById('user-avatar').textContent=ini;
   document.getElementById('user-name').textContent=user.username;
   updateGhTokenUI();
-  setupTaskReminders();
 }
 
 function doLogout(){
@@ -1449,7 +1448,14 @@ let msalApp=null,token=null,odView='grid',odPath=[{id:'root',name:'🏠 My Drive
 let odPageStack={dash:[],full:[]},odCurrentPage={dash:0,full:0},odAllItems={dash:[],full:[]};
 
 /* ══ DATA — loaded from localStorage or defaults ══ */
-function loadData(){
+async function loadData(){
+  // Prefer syncing from GitHub if we have a token (so server acts as source of truth).
+  const tok = sessionStorage.getItem('pah_gh_token');
+  if(tok){
+    const ok = await loadFromGitHub();
+    if(ok) return;
+  }
+
   try{
     TASKS        = JSON.parse(localStorage.getItem('pah_tasks'))        || defaultTasks();
     PROJECTS     = JSON.parse(localStorage.getItem('pah_projects'))     || defaultProjects();
@@ -1457,11 +1463,18 @@ function loadData(){
     TASK_STATUSES= JSON.parse(localStorage.getItem('pah_task_statuses'))|| defaultTaskStatuses();
   }catch(e){ TASKS=defaultTasks(); PROJECTS=defaultProjects(); TEAM=defaultTeam(); TASK_STATUSES=defaultTaskStatuses(); }
 }
-function save(){
+
+async function save(){
   localStorage.setItem('pah_tasks',JSON.stringify(TASKS));
   localStorage.setItem('pah_projects',JSON.stringify(PROJECTS));
   localStorage.setItem('pah_team',JSON.stringify(TEAM));
   localStorage.setItem('pah_task_statuses',JSON.stringify(TASK_STATUSES));
+
+  const tok = sessionStorage.getItem('pah_gh_token');
+  if(tok){
+    // Try saving to GitHub as well; fails silently if token invalid.
+    try{ await saveToGitHub(); }catch(e){ console.warn('GitHub autosave failed:', e.message); }
+  }
 }
 
 let TASKS=[], PROJECTS=[], TEAM=[], TASK_STATUSES=[];
@@ -1488,11 +1501,10 @@ function defaultProjects(){return[
   {id:4,name:'Compliance Audit',desc:'Annual review prep',progress:30,status:'overdue',due:'2026-03-05'},
 ];}
 function defaultTeam(){return[
-  {id:1,name:'Alice Morgan',role:'Project Manager',status:'online',color:'#1565c0'},
-  {id:2,name:'Ben Carter',role:'Developer',status:'online',color:'#2e7d32'},
+  {id:1,name:'Payam Mirzaoanah',role:'Project Manager',status:'online',color:'#1565c0'},
+  {id:2,name:'Shahram ES`haghi',role:'Manager',status:'online',color:'#2e7d32'},
   {id:3,name:'Clara Lee',role:'Designer',status:'away',color:'#e65100'},
-  {id:4,name:'David Park',role:'QA Engineer',status:'online',color:'#6a1b9a'},
-  {id:5,name:'Emma Wilson',role:'Business Analyst',status:'offline',color:'#455a64'},
+
 ];}
 
 let nextId={task:100,project:100,team:100};
