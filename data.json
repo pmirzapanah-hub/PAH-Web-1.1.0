@@ -86,15 +86,7 @@
       "odFolderId": "9446C2B191592985!15160"
     }
   ],
-  "team": [
-    {
-      "id": 2,
-      "name": "Ben Carter",
-      "role": "Developer",
-      "status": "online",
-      "color": "#2e7d32"
-    }
-  ],
+  "team": [],
   "taskStatuses": [
     {
       "id": "pending",
@@ -133,5 +125,5 @@
       "role": "manager"
     }
   ],
-  "savedAt": "2026-03-14T00:48:47.441Z"
+  "savedAt": "2026-03-14T00:48:53.141Z"
 }
