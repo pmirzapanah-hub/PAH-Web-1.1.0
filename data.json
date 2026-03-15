@@ -11,14 +11,6 @@
       "odFolderId": null
     },
     {
-      "id": 2,
-      "name": "Client Portal",
-      "desc": "External client access",
-      "progress": 45,
-      "status": "at-risk",
-      "due": "2026-03-15"
-    },
-    {
       "id": 4,
       "name": "Compliance Audit",
       "desc": "Annual review prep",
@@ -88,5 +80,5 @@
       "role": "manager"
     }
   ],
-  "savedAt": "2026-03-15T00:40:06.374Z"
+  "savedAt": "2026-03-15T00:40:12.760Z"
 }
