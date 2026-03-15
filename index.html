@@ -1364,7 +1364,18 @@ function clearGhToken(){
   // updateGhTokenUI removed
   toast('🗑️ GitHub token cleared');
 }
-function updateGhTokenUI(){}
+function updateGhTokenUI(){
+  const el = document.getElementById('gh-token-status');
+  if(!el) return;
+  const tok = sessionStorage.getItem('pah_gh_token');
+  if(tok){
+    el.textContent = '✅ Token active';
+    el.style.color = 'var(--green)';
+  } else {
+    el.textContent = 'Not set';
+    el.style.color = 'var(--text-dim)';
+  }
+}
 
 function toggleLoginPassword(){
   const inp = document.getElementById('login-pass');
@@ -1427,6 +1438,7 @@ async function getOrAskToken(){
   const tok=await decryptToken('Admin_vipcabinets');
   if(tok){
     sessionStorage.setItem('pah_gh_token',tok);
+    updateGhTokenUI();
     return tok;
   }
   // Decrypt failed — likely not on HTTPS or token blob issue
@@ -1444,7 +1456,7 @@ async function submitPassword(){
   if(!token){ showPwError('❌ Wrong password. Try again.'); document.getElementById('pw-input').value=''; document.getElementById('pw-input').focus(); return; }
   sessionStorage.setItem('pah_gh_token', token);
   document.getElementById('pw-modal').classList.remove('open');
-  // updateGhTokenUI removed
+  updateGhTokenUI();
   toast('✅ Unlocked — syncing to GitHub…');
   if(window._pwResolve){ window._pwResolve(token); window._pwResolve=null; }
 }
@@ -2106,7 +2118,7 @@ function goTo(page){
   if(newBn) newBn.classList.add('active');
   if(page==='onedrive') syncFullOdView();
   if(page==='reports') renderReports();
-  if(page==='settings'){ renderTaskStatusList(); renderUsersList(); loadUsersFromGitHub().then(renderUsersList); populateNotifSettings(); }
+  if(page==='settings'){ renderTaskStatusList(); renderUsersList(); loadUsersFromGitHub().then(renderUsersList); populateNotifSettings(); updateGhTokenUI(); }
   closeSidebar();
 }
 
