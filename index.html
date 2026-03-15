@@ -1088,7 +1088,7 @@ async function loadUsersFromGitHub(){
     const tok=sessionStorage.getItem('pah_gh_token');
     if(!tok) return;
     const url=`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.file}`;
-    const r=await fetch(url+'?t='+Date.now(),{headers:{Authorization:`token ${tok}`,Accept:'application/vnd.github.v3+json','Cache-Control':'no-cache'}});
+    const r=await fetch(url,{headers:{Authorization:`token ${tok}`,Accept:'application/vnd.github.v3+json'}});
     if(!r.ok) return;
     const j=await r.json();
     const decoded=JSON.parse(atob(j.content.split('\n').join('')));
@@ -1259,7 +1259,7 @@ async function saveUsersToGitHub(){
   if(!tok) return;
   try{
     const url=`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.file}`;
-    const check=await fetch(url+'?t='+Date.now(),{headers:{Authorization:`token ${tok}`,Accept:'application/vnd.github.v3+json','Cache-Control':'no-cache'}});
+    const check=await fetch(url,{headers:{Authorization:`token ${tok}`,Accept:'application/vnd.github.v3+json'}});
     if(check.ok){ const cj=await check.json(); window._ghSha=cj.sha; }
     else { window._ghSha=null; }
     const payload={tasks:TASKS,projects:PROJECTS,team:TEAM,taskStatuses:TASK_STATUSES,users:USERS,savedAt:new Date().toISOString()};
@@ -1394,7 +1394,7 @@ async function loadFromGitHub(){
     const tok=await getOrAskToken();
     if(!tok) return false;
     const url=`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.file}`;
-    const r=await fetch(url+'?t='+Date.now(),{headers:{Authorization:`token ${tok}`,Accept:'application/vnd.github.v3+json','Cache-Control':'no-cache'}});
+    const r=await fetch(url,{headers:{Authorization:`token ${tok}`,Accept:'application/vnd.github.v3+json'}});
     if(r.status===404){ console.log('No data.json yet — will create on first save.'); return false; }
     if(!r.ok) throw new Error('GitHub load failed: '+r.status);
     const j=await r.json();
@@ -1420,7 +1420,7 @@ async function saveToGitHub(){
   try{
     const url=`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.file}`;
     // Always fetch fresh SHA to avoid conflicts
-    const check=await fetch(url+'?t='+Date.now(),{headers:{Authorization:`token ${tok}`,Accept:'application/vnd.github.v3+json','Cache-Control':'no-cache'}});
+    const check=await fetch(url,{headers:{Authorization:`token ${tok}`,Accept:'application/vnd.github.v3+json'}});
     if(check.ok){ const cj=await check.json(); window._ghSha=cj.sha; }
     else { window._ghSha=null; }
     const payload={tasks:TASKS,projects:PROJECTS,team:TEAM,taskStatuses:TASK_STATUSES,users:USERS,savedAt:new Date().toISOString()};
