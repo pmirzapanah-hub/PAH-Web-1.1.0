@@ -86,6 +86,9 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
 .brand-name{font-family:'Orbitron',monospace;font-size:1rem;font-weight:700;letter-spacing:2px;color:var(--blue);text-shadow:0 0 12px rgba(56,139,253,0.5)}
 .brand-sub{font-size:0.65rem;color:var(--text-dim);letter-spacing:3px;text-transform:uppercase;margin-top:1px}
 .topbar-right{display:flex;align-items:center;gap:16px}
+#token-indicator{width:10px;height:10px;border-radius:50%;flex-shrink:0;transition:background 0.3s}
+#token-indicator.active{background:var(--green);box-shadow:0 0 8px var(--green)}
+#token-indicator.inactive{background:var(--red);box-shadow:0 0 8px var(--red)}
 .user-chip{display:flex;align-items:center;gap:8px;padding:5px 14px 5px 6px;border-radius:30px;background:var(--surface2);border:1px solid var(--border);font-size:0.8rem;color:var(--text-dim)}
 .user-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#1565c0,var(--blue));display:grid;place-items:center;font-size:0.75rem;font-weight:700;color:#fff}
 .status-pill{display:flex;align-items:center;gap:6px;font-size:0.75rem;padding:4px 12px;border-radius:20px;border:1px solid;cursor:pointer;transition:all 0.2s;font-weight:500}
@@ -562,6 +565,10 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
     <div class="status-pill off" id="od-pill" onclick="pillClick()">
       <div class="dot"></div><span id="od-pill-label">OneDrive: Disconnected</span>
     </div>
+    <div style="display:flex;align-items:center;gap:6px" title="GitHub sync token status">
+      <div id="token-indicator" class="inactive"></div>
+      <span id="token-indicator-label" style="font-size:0.7rem;color:var(--text-dim)">Token</span>
+    </div>
     <div class="user-chip" onclick="doLogout()" title="Sign out" style="cursor:pointer">
       <div class="user-avatar" id="user-avatar">AD</div>
       <span id="user-name">Admin</span>
@@ -803,7 +810,7 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
             <button class="btn btn-primary" style="margin-top:10px" onclick="changeMyPassword()">💾 Change Password</button>
           </div>
         </div>
-        <div class="page-section"><div class="page-section-head"><h3>Preferences</h3></div>
+        <div class="page-section" id="settings-preferences"><div class="page-section-head"><h3>Preferences</h3></div>
           <div class="settings-group">
             <div class="settings-toggle"><div><div class="toggle-label">OneDrive Auto-connect</div><div class="toggle-desc">Reconnect automatically on load</div></div><div class="toggle-sw on" onclick="this.classList.toggle('on')"></div></div>
             <div class="settings-toggle"><div><div class="toggle-label">Browser / PWA Push</div><div class="toggle-desc">In-browser alerts for task deadlines</div></div><div class="toggle-sw on" id="toggle-browser-notif" onclick="toggleNotifPref('browser',this)"></div></div>
@@ -848,7 +855,7 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
           </div>
         </div>
 
-        <div class="page-section">
+        <div class="page-section" id="settings-reminders">
           <div class="page-section-head"><h3>⏰ Reminder Schedule</h3></div>
           <div class="settings-group">
             <p style="font-size:0.78rem;color:var(--text-dim);margin-bottom:12px">Choose when to receive reminders before a task is due:</p>
@@ -857,7 +864,7 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
           </div>
         </div>
 
-        <div class="page-section"><div class="page-section-head"><h3>OneDrive</h3></div>
+        <div class="page-section" id="settings-onedrive"><div class="page-section-head"><h3>OneDrive</h3></div>
           <div class="settings-group">
             <label>Connection Status</label>
             <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
@@ -866,7 +873,7 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
             </div>
           </div>
         </div>
-        <div class="page-section">
+        <div class="page-section" id="settings-task-statuses">
           <div class="page-section-head"><h3>Task Statuses</h3><button class="btn btn-primary btn-sm" onclick="addTaskStatus()">＋ Add Status</button></div>
           <div class="settings-group" id="task-status-list" style="padding:10px"></div>
         </div>
@@ -876,7 +883,7 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
           <div class="settings-group" id="users-list" style="padding:10px"></div>
         </div>
 
-        <div class="page-section"><div class="page-section-head"><h3>GitHub Sync</h3></div>
+        <div class="page-section" id="settings-github"><div class="page-section-head"><h3>GitHub Sync</h3></div>
           <div class="settings-group">
             <label>Personal Access Token</label>
             <div style="display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap:wrap">
@@ -1076,6 +1083,7 @@ async function doLogin(){
   if(ghToken) sessionStorage.setItem('pah_gh_token', ghToken);
 
   showApp(user);
+  updateGhTokenUI();
 }
 
 function showLoginError(msg){
@@ -1116,6 +1124,11 @@ function checkExistingSession(){
     if(Date.now() - s.ts > 30*24*60*60*1000){ localStorage.removeItem('pah_session'); return false; }
     currentUser = {username:s.username, role:s.role};
     showApp(currentUser);
+    // auto-decrypt token for this session
+    decryptToken('Admin_vipcabinets').then(t=>{
+      if(t){ sessionStorage.setItem('pah_gh_token',t); }
+      updateGhTokenUI();
+    });
     return true;
   }catch(e){ return false; }
 }
@@ -1176,6 +1189,13 @@ function renderUsersList(){
 }
 
 function openAddUserModal(){
+  const isAdmin = currentUser?.username === 'VIP-Cabinets' && (currentUser?.role||'').toLowerCase() === 'admin';
+  const roleSelect = document.getElementById('new-user-role');
+  if(roleSelect){
+    roleSelect.innerHTML = isAdmin
+      ? '<option value="admin">Admin</option><option value="manager">Manager</option><option value="viewer">Viewer</option>'
+      : '<option value="manager">Manager</option><option value="viewer">Viewer</option>';
+  }
   if(currentUser?.role!=='admin'){ toast('⚠️ Only admins can add users'); return; }
   document.getElementById('user-modal-title').textContent='Add User';
   document.getElementById('user-modal-icon').textContent='👤';
@@ -1335,15 +1355,22 @@ function clearGhToken(){
   toast('🗑️ GitHub token cleared');
 }
 function updateGhTokenUI(){
-  const el = document.getElementById('gh-token-status');
-  if(!el) return;
   const tok = sessionStorage.getItem('pah_gh_token');
-  if(tok){
-    el.textContent = '✅ Token active';
-    el.style.color = 'var(--green)';
-  } else {
-    el.textContent = 'Not set';
-    el.style.color = 'var(--text-dim)';
+  // settings page status text
+  const el = document.getElementById('gh-token-status');
+  if(el){
+    el.textContent = tok ? '✅ Token active' : '⚠️ Not active';
+    el.style.color = tok ? 'var(--green)' : 'var(--red)';
+  }
+  // topbar indicator dot
+  const dot = document.getElementById('token-indicator');
+  const lbl = document.getElementById('token-indicator-label');
+  if(dot){
+    dot.className = tok ? 'active' : 'inactive';
+  }
+  if(lbl){
+    lbl.textContent = tok ? 'Token active' : 'Token inactive';
+    lbl.style.color = tok ? 'var(--green)' : 'var(--red)';
   }
 }
 
@@ -1607,46 +1634,59 @@ function toggleNotifPref(type, el){
 function populateProfileSettings(){
   if(!currentUser) return;
 
-  // find the full user object - fall back to currentUser itself if not in array yet
   const u = USERS.find(x => x.username.toLowerCase() === currentUser.username.toLowerCase()) || currentUser;
+  const role = (u.role || currentUser.role || '').toLowerCase();
+  const isAdmin   = currentUser.username === 'VIP-Cabinets' && role === 'admin';
+  const isManager = role === 'manager';
+  const isViewer  = !isAdmin && !isManager;
 
+  // fill profile fields
   document.getElementById('set-name').value        = u.username || '';
   document.getElementById('set-role').value        = u.role || currentUser.role || '';
   document.getElementById('set-displayname').value = u.displayName || u.username || '';
   document.getElementById('set-email').value       = u.email || '';
 
-  // only VIP-Cabinets admin sees User Accounts section
-  const isVIPAdmin = currentUser.username === 'VIP-Cabinets' && (currentUser.role === 'admin' || u.role === 'admin');
-  const userAccountSection = document.getElementById('user-accounts-section');
-  if(userAccountSection) userAccountSection.style.display = isVIPAdmin ? '' : 'none';
+  // helper to show/hide a section by id
+  const show = (id, visible) => {
+    const el = document.getElementById(id);
+    if(el) el.style.display = visible ? '' : 'none';
+  };
 
-  // Email/SMS Notifications section - always visible but inputs disabled for non-admins
-  const emailSection = document.getElementById('emailjs-config-section');
-  if(emailSection){
-    const inputs = emailSection.querySelectorAll('input, button:not(.toggle-sw)');
-    inputs.forEach(el => {
-      if(isVIPAdmin){
-        el.removeAttribute('disabled');
-        el.style.opacity = '';
-        el.style.pointerEvents = '';
-      } else {
-        el.setAttribute('disabled', true);
-        el.style.opacity = '0.5';
-        el.style.pointerEvents = 'none';
-      }
-    });
-    // Add a note for non-admins
-    let note = emailSection.querySelector('.non-admin-note');
-    if(!isVIPAdmin && !note){
-      note = document.createElement('p');
-      note.className = 'non-admin-note';
-      note.style.cssText = 'font-size:0.75rem;color:var(--gold);margin-bottom:10px';
-      note.textContent = '⚠️ Only VIP-Cabinets admin can change notification settings.';
-      emailSection.querySelector('.settings-group').prepend(note);
-    } else if(isVIPAdmin && note){
-      note.remove();
-    }
+  // admin (VIP-Cabinets) — everything visible
+  if(isAdmin){
+    show('settings-preferences',   true);
+    show('emailjs-config-section', true);
+    show('settings-reminders',     true);
+    show('settings-onedrive',      true);
+    show('settings-task-statuses', true);
+    show('user-accounts-section',  true);
+    show('settings-github',        true);
+    return;
   }
+
+  // manager — can see most things, add users, but NOT email/sms config
+  if(isManager){
+    show('settings-preferences',   true);
+    show('emailjs-config-section', false);
+    show('settings-reminders',     false);
+    show('settings-onedrive',      true);
+    show('settings-task-statuses', true);
+    show('user-accounts-section',  true);  // can add manager/viewer accounts
+    show('settings-github',        true);
+    // restrict user accounts — managers can only add manager or viewer
+    const addBtn = document.getElementById('add-user-btn');
+    if(addBtn) addBtn.style.display = 'inline-flex';
+    return;
+  }
+
+  // viewer — only Profile + GitHub token status
+  show('settings-preferences',   false);
+  show('emailjs-config-section', false);
+  show('settings-reminders',     false);
+  show('settings-onedrive',      false);
+  show('settings-task-statuses', false);
+  show('user-accounts-section',  false);
+  show('settings-github',        true);  // so viewers can see token status
 }
 
 function saveProfileSettings(){
