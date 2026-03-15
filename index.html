@@ -1526,9 +1526,11 @@ async function saveToGitHub(){
     if(!r.ok){ const e=await r.json(); throw new Error(e.message||r.status); }
     const j=await r.json();
     window._ghSha=j.content.sha;
-    toast('☁️ Saved to GitHub');
+    if(!window._suppressGhToast) toast('☁️ Saved to GitHub');
+    window._suppressGhToast=false;
   }catch(e){
     console.warn('GitHub save error:',e.message);
+    window._suppressGhToast=false;
     toast('⚠️ GitHub save failed: '+e.message);
   }
 }
@@ -1632,7 +1634,7 @@ function loadNotifSettings(){
   }
 }
 
-function saveNotifConfig(){
+async function saveNotifConfig(){
   NOTIF_CONFIG.ejsPublicKey  = document.getElementById('ejs-pubkey')?.value.trim()||'';
   NOTIF_CONFIG.ejsServiceId  = document.getElementById('ejs-service')?.value.trim()||'';
   NOTIF_CONFIG.ejsTemplateId = document.getElementById('ejs-template')?.value.trim()||'';
@@ -1641,11 +1643,17 @@ function saveNotifConfig(){
   localStorage.setItem('pah_notif_config', JSON.stringify(NOTIF_CONFIG));
   localStorage.setItem('pah_notif_prefs', JSON.stringify(NOTIF_PREFS));
   localStorage.setItem('pah_reminder_intervals', JSON.stringify(REMINDER_INTERVALS));
-  saveToGitHub(); // push to data.json so all devices get it
-  const st = document.getElementById('ejs-status');
-  if(st){ st.style.display='block'; st.style.color='var(--green)'; st.textContent='✅ Notification config saved!'; setTimeout(()=>st.style.display='none',3000); }
   setupTaskReminders();
-  toast('✅ Notification settings saved');
+  // show saving indicator
+  const st = document.getElementById('ejs-status');
+  if(st){ st.style.display='block'; st.style.color='var(--text-dim)'; st.textContent='Saving to GitHub…'; }
+  const btn = document.querySelector('[onclick="saveNotifConfig()"]');
+  if(btn){ btn.disabled=true; btn.textContent='Saving…'; }
+  window._suppressGhToast=true; // status shown inline instead
+  await saveToGitHub();
+  // update status
+  if(st){ st.style.color='var(--green)'; st.textContent='✅ Saved & synced to GitHub!'; setTimeout(()=>st.style.display='none',4000); }
+  if(btn){ btn.disabled=false; btn.textContent='💾 Save Config'; }
 }
 
 function toggleNotifPref(type, el){
