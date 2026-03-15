@@ -77,7 +77,9 @@
       "username": "VIP-Cabinets",
       "passwordHash": "e19bd725e77c0e7bf56670376ddb2d90c32886a6d43bcb016387a9885c638e53",
       "role": "admin",
-      "builtIn": true
+      "builtIn": true,
+      "displayName": "Pooya",
+      "email": "p.mirzapanah@gmail.com"
     },
     {
       "username": "Shahram_vip",
@@ -90,5 +92,5 @@
       "role": "manager"
     }
   ],
-  "savedAt": "2026-03-15T05:53:21.660Z"
+  "savedAt": "2026-03-15T06:01:24.852Z"
 }
