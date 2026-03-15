@@ -1420,17 +1420,19 @@ async function decryptToken(password){
 }
 
 async function getOrAskToken(){
+  // Check sessionStorage cache first
   const cached=sessionStorage.getItem('pah_gh_token');
   if(cached) return cached;
-  // Try auto-decrypt with login password first
+  // Always auto-decrypt with the fixed password — never ask user
   const tok=await decryptToken('Admin_vipcabinets');
-  if(tok){ sessionStorage.setItem('pah_gh_token',tok); return tok; }
-  // Fall back to password modal
-  return new Promise(resolve=>{
-    window._pwResolve=resolve;
-    document.getElementById('pw-modal').classList.add('open');
-    setTimeout(()=>document.getElementById('pw-input')?.focus(),100);
-  });
+  if(tok){
+    sessionStorage.setItem('pah_gh_token',tok);
+    return tok;
+  }
+  // Decrypt failed — likely not on HTTPS or token blob issue
+  // Return null silently, GitHub sync will just be skipped
+  console.warn('GitHub token decrypt failed — sync disabled this session');
+  return null;
 }
 
 async function submitPassword(){
@@ -1458,7 +1460,7 @@ function cancelPassword(){
 async function loadFromGitHub(){
   try{
     const tok=await getOrAskToken();
-    if(!tok) return false;
+    if(!tok){ console.log('GitHub load skipped — no token'); return false; }
     const url=`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.file}`;
     const r=await fetch(url,{headers:{Authorization:`token ${tok}`,Accept:'application/vnd.github.v3+json'}});
     if(r.status===404){ console.log('No data.json yet — will create on first save.'); return false; }
@@ -1482,7 +1484,7 @@ async function loadFromGitHub(){
 
 async function saveToGitHub(){
   const tok=await getOrAskToken();
-  if(!tok) return;
+  if(!tok){ console.log('GitHub sync skipped — no token'); return; }
   try{
     const url=`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.file}`;
     // Always fetch fresh SHA to avoid conflicts
