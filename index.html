@@ -871,7 +871,7 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
           <div class="settings-group" id="task-status-list" style="padding:10px"></div>
         </div>
 
-        <div class="page-section">
+        <div class="page-section" id="user-accounts-section">
           <div class="page-section-head"><h3>User Accounts</h3><button id="add-user-btn" class="btn btn-primary btn-sm" onclick="openAddUserModal()">＋ Add User</button></div>
           <div class="settings-group" id="users-list" style="padding:10px"></div>
         </div>
@@ -1606,7 +1606,8 @@ function toggleNotifPref(type, el){
 
 function populateProfileSettings(){
   if(!currentUser) return;
-  const u = USERS.find(x => x.username === currentUser.username);
+  // always look up fresh from USERS using the logged-in username
+  const u = USERS.find(x => x.username.toLowerCase() === currentUser.username.toLowerCase());
   if(!u) return;
   const nameEl = document.getElementById('set-name');
   const roleEl = document.getElementById('set-role');
@@ -1615,7 +1616,14 @@ function populateProfileSettings(){
   if(nameEl) nameEl.value = u.username || '';
   if(roleEl) roleEl.value = u.role || '';
   if(displayEl) displayEl.value = u.displayName || u.username || '';
-  if(emailEl) emailEl.value = u.email || NOTIF_CONFIG.toEmail || '';
+  if(emailEl) emailEl.value = u.email || '';
+
+  // show/hide User Accounts section — only VIP-Cabinets admin sees it
+  const userAccountSection = document.getElementById('user-accounts-section');
+  if(userAccountSection){
+    const isVIPAdmin = u.username === 'VIP-Cabinets' && u.role === 'admin';
+    userAccountSection.style.display = isVIPAdmin ? '' : 'none';
+  }
 }
 
 function saveProfileSettings(){
@@ -2100,7 +2108,7 @@ function goTo(page){
   if(newBn) newBn.classList.add('active');
   if(page==='onedrive') syncFullOdView();
   if(page==='reports') renderReports();
-  if(page==='settings'){ renderTaskStatusList(); renderUsersList(); loadUsersFromGitHub().then(renderUsersList); populateNotifSettings(); populateProfileSettings(); updateGhTokenUI(); }
+  if(page==='settings'){ renderTaskStatusList(); renderUsersList(); loadUsersFromGitHub().then(()=>{ renderUsersList(); populateProfileSettings(); }); populateNotifSettings(); populateProfileSettings(); updateGhTokenUI(); }
   closeSidebar();
 }
 
