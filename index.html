@@ -837,7 +837,7 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
             <input class="modal-input" id="ejs-service" placeholder="e.g. service_xxxxxxx" style="margin-bottom:10px"/>
             <label>EmailJS Template ID</label>
             <input class="modal-input" id="ejs-template" placeholder="e.g. template_xxxxxxx" style="margin-bottom:10px"/>
-            <label>Your Email Address <span style="color:var(--text-dim);font-size:0.75rem">(receive task alerts)</span></label>
+            <label>Alert Recipient Email <span style="color:var(--text-dim);font-size:0.75rem">(passed as {{to_email}} in your EmailJS template)</span></label>
             <input class="modal-input" id="ejs-email" type="email" placeholder="you@example.com" style="margin-bottom:10px"/>
             <label>SMS Email Gateway <span style="color:var(--text-dim);font-size:0.75rem">(optional — e.g. <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="477773767574737271707f07342a346933222b343335266924282a">[email&#160;protected]</a>)</span></label>
             <input class="modal-input" id="ejs-sms" placeholder="number@carrier-gateway.com" style="margin-bottom:14px"/>
@@ -1328,7 +1328,7 @@ async function saveUsersToGitHub(){
     const check=await fetch(url,{headers:{Authorization:`token ${tok}`,Accept:'application/vnd.github.v3+json'}});
     if(check.ok){ const cj=await check.json(); window._ghSha=cj.sha; }
     else { window._ghSha=null; }
-    const payload={tasks:TASKS,projects:PROJECTS,team:TEAM,taskStatuses:TASK_STATUSES,users:USERS,savedAt:new Date().toISOString()};
+    const payload={tasks:TASKS,projects:PROJECTS,team:TEAM,taskStatuses:TASK_STATUSES,users:USERS,notifConfig:NOTIF_CONFIG,notifPrefs:NOTIF_PREFS,reminderIntervals:REMINDER_INTERVALS,savedAt:new Date().toISOString()};
     const encoded=btoa(unescape(encodeURIComponent(JSON.stringify(payload,null,2))));
     const body={message:'PAH users update',content:encoded,branch:GH.branch};
     if(window._ghSha) body.sha=window._ghSha;
@@ -1493,6 +1493,14 @@ async function loadFromGitHub(){
     if(decoded.team         && decoded.team.length         > 0) TEAM          = decoded.team;
     if(decoded.taskStatuses && decoded.taskStatuses.length > 0) TASK_STATUSES = decoded.taskStatuses;
     if(decoded.users        && decoded.users.length        > 0) USERS         = decoded.users;
+    // load notification config (sync across devices)
+    if(decoded.notifConfig)        NOTIF_CONFIG        = {...NOTIF_CONFIG, ...decoded.notifConfig};
+    if(decoded.notifPrefs)         NOTIF_PREFS         = {...NOTIF_PREFS,  ...decoded.notifPrefs};
+    if(decoded.reminderIntervals && decoded.reminderIntervals.length > 0) REMINDER_INTERVALS = decoded.reminderIntervals;
+    // mirror to localStorage as cache
+    localStorage.setItem('pah_notif_config',      JSON.stringify(NOTIF_CONFIG));
+    localStorage.setItem('pah_notif_prefs',       JSON.stringify(NOTIF_PREFS));
+    localStorage.setItem('pah_reminder_intervals',JSON.stringify(REMINDER_INTERVALS));
     console.log('✅ Data loaded from GitHub');
     return true;
   }catch(e){
@@ -1510,7 +1518,7 @@ async function saveToGitHub(){
     const check=await fetch(url,{headers:{Authorization:`token ${tok}`,Accept:'application/vnd.github.v3+json'}});
     if(check.ok){ const cj=await check.json(); window._ghSha=cj.sha; }
     else { window._ghSha=null; }
-    const payload={tasks:TASKS,projects:PROJECTS,team:TEAM,taskStatuses:TASK_STATUSES,users:USERS,savedAt:new Date().toISOString()};
+    const payload={tasks:TASKS,projects:PROJECTS,team:TEAM,taskStatuses:TASK_STATUSES,users:USERS,notifConfig:NOTIF_CONFIG,notifPrefs:NOTIF_PREFS,reminderIntervals:REMINDER_INTERVALS,savedAt:new Date().toISOString()};
     const encoded=btoa(unescape(encodeURIComponent(JSON.stringify(payload,null,2))));
     const body={message:'PAH update '+new Date().toLocaleString(),content:encoded,branch:GH.branch};
     if(window._ghSha) body.sha=window._ghSha;
@@ -1627,6 +1635,8 @@ function saveNotifConfig(){
   NOTIF_CONFIG.toSms         = document.getElementById('ejs-sms')?.value.trim()||'';
   localStorage.setItem('pah_notif_config', JSON.stringify(NOTIF_CONFIG));
   localStorage.setItem('pah_notif_prefs', JSON.stringify(NOTIF_PREFS));
+  localStorage.setItem('pah_reminder_intervals', JSON.stringify(REMINDER_INTERVALS));
+  saveToGitHub(); // push to data.json so all devices get it
   const st = document.getElementById('ejs-status');
   if(st){ st.style.display='block'; st.style.color='var(--green)'; st.textContent='✅ Notification config saved!'; setTimeout(()=>st.style.display='none',3000); }
   setupTaskReminders();
@@ -1638,6 +1648,7 @@ function toggleNotifPref(type, el){
   NOTIF_PREFS[type] = el.classList.contains('on');
   localStorage.setItem('pah_notif_prefs', JSON.stringify(NOTIF_PREFS));
   if(type==='browser' && NOTIF_PREFS.browser) requestNotificationPermission();
+  saveToGitHub();
 }
 
 function populateProfileSettings(){
@@ -1720,11 +1731,10 @@ function saveProfileSettings(){
     // also sync to notification config so emails go to right address
     NOTIF_CONFIG.toEmail = email;
     localStorage.setItem('pah_notif_config', JSON.stringify(NOTIF_CONFIG));
-    // update the emailjs field too if visible
     const ejsEmail = document.getElementById('ejs-email');
     if(ejsEmail) ejsEmail.value = email;
   }
-  save();
+  save(); // save() calls saveToGitHub which includes notifConfig in payload
   toast('✅ Profile saved');
 }
 
@@ -1764,6 +1774,7 @@ function addReminderInterval(){
   localStorage.setItem('pah_reminder_intervals', JSON.stringify(REMINDER_INTERVALS));
   renderReminderSchedule();
   setupTaskReminders();
+  saveToGitHub();
 }
 
 function removeReminderInterval(i){
@@ -1771,12 +1782,14 @@ function removeReminderInterval(i){
   localStorage.setItem('pah_reminder_intervals', JSON.stringify(REMINDER_INTERVALS));
   renderReminderSchedule();
   setupTaskReminders();
+  saveToGitHub();
 }
 
 function updateReminderInterval(i, val){
   REMINDER_INTERVALS[i] = parseInt(val);
   localStorage.setItem('pah_reminder_intervals', JSON.stringify(REMINDER_INTERVALS));
   setupTaskReminders();
+  saveToGitHub();
 }
 
 function requestNotificationPermission(){
