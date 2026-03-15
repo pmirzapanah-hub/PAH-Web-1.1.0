@@ -34,13 +34,6 @@
       "done": false,
       "pri": "m",
       "due": "2026-03-11"
-    },
-    {
-      "id": 6,
-      "name": "Archive sprint files",
-      "done": false,
-      "pri": "l",
-      "due": "2026-03-12"
     }
   ],
   "projects": [
@@ -130,5 +123,5 @@
       "role": "manager"
     }
   ],
-  "savedAt": "2026-03-15T00:38:41.103Z"
+  "savedAt": "2026-03-15T00:39:23.487Z"
 }
