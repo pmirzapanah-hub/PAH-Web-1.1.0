@@ -1606,23 +1606,46 @@ function toggleNotifPref(type, el){
 
 function populateProfileSettings(){
   if(!currentUser) return;
-  // always look up fresh from USERS using the logged-in username
-  const u = USERS.find(x => x.username.toLowerCase() === currentUser.username.toLowerCase());
-  if(!u) return;
-  const nameEl = document.getElementById('set-name');
-  const roleEl = document.getElementById('set-role');
-  const displayEl = document.getElementById('set-displayname');
-  const emailEl = document.getElementById('set-email');
-  if(nameEl) nameEl.value = u.username || '';
-  if(roleEl) roleEl.value = u.role || '';
-  if(displayEl) displayEl.value = u.displayName || u.username || '';
-  if(emailEl) emailEl.value = u.email || '';
 
-  // show/hide User Accounts section — only VIP-Cabinets admin sees it
+  // find the full user object - fall back to currentUser itself if not in array yet
+  const u = USERS.find(x => x.username.toLowerCase() === currentUser.username.toLowerCase()) || currentUser;
+
+  document.getElementById('set-name').value        = u.username || '';
+  document.getElementById('set-role').value        = u.role || currentUser.role || '';
+  document.getElementById('set-displayname').value = u.displayName || u.username || '';
+  document.getElementById('set-email').value       = u.email || '';
+
+  // only VIP-Cabinets admin sees User Accounts section
+  const isVIPAdmin = currentUser.username === 'VIP-Cabinets' && (currentUser.role === 'admin' || u.role === 'admin');
   const userAccountSection = document.getElementById('user-accounts-section');
-  if(userAccountSection){
-    const isVIPAdmin = u.username === 'VIP-Cabinets' && u.role === 'admin';
-    userAccountSection.style.display = isVIPAdmin ? '' : 'none';
+  if(userAccountSection) userAccountSection.style.display = isVIPAdmin ? '' : 'none';
+
+  // Email/SMS Notifications section - always visible but inputs disabled for non-admins
+  const emailSection = document.getElementById('emailjs-config-section');
+  if(emailSection){
+    const inputs = emailSection.querySelectorAll('input, button:not(.toggle-sw)');
+    inputs.forEach(el => {
+      if(isVIPAdmin){
+        el.removeAttribute('disabled');
+        el.style.opacity = '';
+        el.style.pointerEvents = '';
+      } else {
+        el.setAttribute('disabled', true);
+        el.style.opacity = '0.5';
+        el.style.pointerEvents = 'none';
+      }
+    });
+    // Add a note for non-admins
+    let note = emailSection.querySelector('.non-admin-note');
+    if(!isVIPAdmin && !note){
+      note = document.createElement('p');
+      note.className = 'non-admin-note';
+      note.style.cssText = 'font-size:0.75rem;color:var(--gold);margin-bottom:10px';
+      note.textContent = '⚠️ Only VIP-Cabinets admin can change notification settings.';
+      emailSection.querySelector('.settings-group').prepend(note);
+    } else if(isVIPAdmin && note){
+      note.remove();
+    }
   }
 }
 
