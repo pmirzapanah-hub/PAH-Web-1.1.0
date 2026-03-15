@@ -1400,11 +1400,12 @@ async function loadFromGitHub(){
     const j=await r.json();
     window._ghSha=j.sha;
     const decoded=JSON.parse(atob(j.content.split('\n').join('')));
-    if(decoded.tasks)        TASKS         = decoded.tasks;
-    if(decoded.projects)     PROJECTS      = decoded.projects;
-    if(decoded.team)         TEAM          = decoded.team;
-    if(decoded.taskStatuses) TASK_STATUSES = decoded.taskStatuses;
-    if(decoded.users)        USERS         = decoded.users;
+    // Only overwrite if GitHub has actual data (not empty arrays)
+    if(decoded.tasks        && decoded.tasks.length        > 0) TASKS         = decoded.tasks;
+    if(decoded.projects     && decoded.projects.length     > 0) PROJECTS      = decoded.projects;
+    if(decoded.team         && decoded.team.length         > 0) TEAM          = decoded.team;
+    if(decoded.taskStatuses && decoded.taskStatuses.length > 0) TASK_STATUSES = decoded.taskStatuses;
+    if(decoded.users        && decoded.users.length        > 0) USERS         = decoded.users;
     console.log('✅ Data loaded from GitHub');
     return true;
   }catch(e){
@@ -1469,12 +1470,7 @@ async function save(){
   localStorage.setItem('pah_team',JSON.stringify(TEAM));
   localStorage.setItem('pah_task_statuses',JSON.stringify(TASK_STATUSES));
   localStorage.setItem('pah_users',JSON.stringify(USERS));
-
-  const tok = sessionStorage.getItem('pah_gh_token');
-  if(tok){
-    // Try saving to GitHub as well; fails silently if token invalid.
-    // GitHub autosave removed
-  }
+  await saveToGitHub();
 }
 
 let TASKS=[], PROJECTS=[], TEAM=[], TASK_STATUSES=[];
@@ -1587,11 +1583,17 @@ window.addEventListener('DOMContentLoaded',async()=>{
   if(checkExistingSession()){
     renderAll();
     setupTaskReminders();
-    // Load fresh data from GitHub — this is the source of truth
+    // Load fresh data from GitHub — source of truth
     const ghLoaded = await loadFromGitHub();
     if(ghLoaded){
-      await initDefaultUsers(); // re-ensure after GitHub overwrites USERS
-      save(); renderAll(); setupTaskReminders();
+      await initDefaultUsers();
+      // Save merged result back to localStorage
+      localStorage.setItem('pah_tasks',JSON.stringify(TASKS));
+      localStorage.setItem('pah_projects',JSON.stringify(PROJECTS));
+      localStorage.setItem('pah_team',JSON.stringify(TEAM));
+      localStorage.setItem('pah_task_statuses',JSON.stringify(TASK_STATUSES));
+      localStorage.setItem('pah_users',JSON.stringify(USERS));
+      renderAll(); setupTaskReminders();
     }
   } else {
     renderAll(); // pre-render while waiting for login
