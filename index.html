@@ -13,6 +13,7 @@
 <link rel="apple-touch-icon" href="pah-icon-192.png"/>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
 :root{
   --bg:#070d1a;--surface:#0c1526;--surface2:#111e35;
@@ -320,6 +321,22 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
 .settings-group label{display:block;font-size:0.78rem;color:var(--text-dim);margin-bottom:5px;margin-top:12px}
 .settings-group label:first-child{margin-top:0}
 .settings-toggle{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border2)}
+/* ── NOTIFICATION BANNER ── */
+#notif-banner{position:fixed;top:68px;right:16px;z-index:1500;display:flex;flex-direction:column;gap:8px;pointer-events:none;max-width:340px;}
+.notif-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;display:flex;align-items:flex-start;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,0.4);pointer-events:all;animation:slideInRight 0.3s ease;}
+.notif-card.urgent{border-color:rgba(248,81,73,0.5);background:rgba(248,81,73,0.08);}
+.notif-card.warning{border-color:rgba(240,192,96,0.5);background:rgba(240,192,96,0.08);}
+.notif-card.info{border-color:rgba(56,139,253,0.5);background:rgba(56,139,253,0.08);}
+.notif-icon{font-size:1.3rem;flex-shrink:0;margin-top:1px;}
+.notif-body{flex:1;min-width:0;}
+.notif-title{font-size:0.82rem;font-weight:600;color:var(--text);margin-bottom:2px;}
+.notif-msg{font-size:0.75rem;color:var(--text-dim);line-height:1.4;}
+.notif-close{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:1rem;padding:0 0 0 6px;line-height:1;flex-shrink:0;}
+.notif-close:hover{color:var(--text);}
+@keyframes slideInRight{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+.notif-dismiss{font-size:0.7rem;color:var(--blue);cursor:pointer;margin-top:4px;display:inline-block;}
+/* ── REMINDER BADGE on nav ── */
+#nb-reminders{background:var(--red);}
 .settings-toggle:last-child{border-bottom:none;padding-bottom:0}
 .toggle-label{font-size:0.85rem}.toggle-desc{font-size:0.72rem;color:var(--text-dim);margin-top:2px}
 .toggle-sw{width:38px;height:20px;border-radius:10px;background:var(--border);cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0}
@@ -608,6 +625,7 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
     </div>
   </div>
 
+<div id="notif-banner"></div>
 <div id="main-col">
 
     <!-- ══ DASHBOARD ══ -->
@@ -814,9 +832,57 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
         <div class="page-section"><div class="page-section-head"><h3>Preferences</h3></div>
           <div class="settings-group">
             <div class="settings-toggle"><div><div class="toggle-label">OneDrive Auto-connect</div><div class="toggle-desc">Reconnect automatically on load</div></div><div class="toggle-sw on" onclick="this.classList.toggle('on')"></div></div>
-            <div class="settings-toggle"><div><div class="toggle-label">Desktop Notifications</div><div class="toggle-desc">Alerts for task deadlines</div></div><div class="toggle-sw" onclick="this.classList.toggle('on')"></div></div>
+            <div class="settings-toggle"><div><div class="toggle-label">Browser / PWA Push</div><div class="toggle-desc">In-browser alerts for task deadlines</div></div><div class="toggle-sw on" id="toggle-browser-notif" onclick="toggleNotifPref('browser',this)"></div></div>
+            <div class="settings-toggle"><div><div class="toggle-label">In-App Reminder Banner</div><div class="toggle-desc">Floating alert card inside the app</div></div><div class="toggle-sw on" id="toggle-banner-notif" onclick="toggleNotifPref('banner',this)"></div></div>
+            <div class="settings-toggle"><div><div class="toggle-label">Email Alerts</div><div class="toggle-desc">Send email when tasks are due</div></div><div class="toggle-sw" id="toggle-email-notif" onclick="toggleNotifPref('email',this)"></div></div>
+            <div class="settings-toggle"><div><div class="toggle-label">SMS (via Email-to-SMS)</div><div class="toggle-desc">Works with carrier email gateway</div></div><div class="toggle-sw" id="toggle-sms-notif" onclick="toggleNotifPref('sms',this)"></div></div>
           </div>
         </div>
+        <div class="page-section" id="emailjs-config-section">
+          <div class="page-section-head"><h3>📧 Email / SMS Notifications</h3></div>
+          <div class="settings-group">
+            <p style="font-size:0.78rem;color:var(--text-dim);margin-bottom:12px;line-height:1.6">
+              Uses <strong style="color:var(--text)">EmailJS</strong> (free). 
+              <a href="https://emailjs.com" target="_blank" style="color:var(--blue)">Sign up</a> → 
+              Add email service → Create template using these variables:<br>
+              <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">{{task_name}}</code> — item name &nbsp;
+              <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">{{item_type}}</code> — Task or Project &nbsp;
+              <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">{{due_date}}</code> — due date &nbsp;
+              <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">{{to_email}}</code> — recipient
+            </p>
+            <label>EmailJS Public Key</label>
+            <input class="modal-input" id="ejs-pubkey" placeholder="e.g. user_xxxxxxxxxxxxxxxx" style="margin-bottom:10px"/>
+            <label>EmailJS Service ID</label>
+            <input class="modal-input" id="ejs-service" placeholder="e.g. service_xxxxxxx" style="margin-bottom:10px"/>
+            <label>EmailJS Template ID</label>
+            <input class="modal-input" id="ejs-template" placeholder="e.g. template_xxxxxxx" style="margin-bottom:10px"/>
+            <label>Your Email Address <span style="color:var(--text-dim);font-size:0.75rem">(receive task alerts)</span></label>
+            <input class="modal-input" id="ejs-email" type="email" placeholder="you@example.com" style="margin-bottom:10px"/>
+            <label>SMS Email Gateway <span style="color:var(--text-dim);font-size:0.75rem">(optional — e.g. <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="477773767574737271707f07342a346933222b343335266924282a">[email&#160;protected]</a>)</span></label>
+            <input class="modal-input" id="ejs-sms" placeholder="number@carrier-gateway.com" style="margin-bottom:14px"/>
+            <div style="background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;font-size:0.75rem;color:var(--text-dim);margin-bottom:14px;line-height:1.7">
+              <strong style="color:var(--text)">Common AU SMS gateways:</strong><br>
+              Telstra: <code><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d7b9a2bab5b2a597a4baa4f9a3b2bba4a3a5b6f9b4b8ba">[email&#160;protected]</a></code><br>
+              Optus: <code><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="7719021a1512053718070302041a18151e1b12121a161e1b5914181a591602">[email&#160;protected]</a></code><br>
+              Vodafone: <code><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="a1cfd4ccc3c4d3e1d7cec5c08fcfc4d58fc0d4">[email&#160;protected]</a></code>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <button class="btn btn-primary" onclick="saveNotifConfig()">💾 Save Config</button>
+              <button class="btn btn-ghost" onclick="testNotification()">🧪 Send Test</button>
+            </div>
+            <div id="ejs-status" style="margin-top:10px;font-size:0.78rem;display:none"></div>
+          </div>
+        </div>
+
+        <div class="page-section">
+          <div class="page-section-head"><h3>⏰ Reminder Schedule</h3></div>
+          <div class="settings-group">
+            <p style="font-size:0.78rem;color:var(--text-dim);margin-bottom:12px">Choose when to receive reminders before a task is due:</p>
+            <div id="reminder-schedule-list"></div>
+            <button class="btn btn-ghost btn-sm" onclick="addReminderInterval()" style="margin-top:10px">＋ Add Interval</button>
+          </div>
+        </div>
+
         <div class="page-section"><div class="page-section-head"><h3>OneDrive</h3></div>
           <div class="settings-group">
             <label>Connection Status</label>
@@ -978,7 +1044,7 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
 
 
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 /* ══ LOGIN SYSTEM ══ */
 // Users stored in data.json on GitHub. Default admin always exists.
 // Passwords stored as SHA-256 hashes.
@@ -1506,20 +1572,227 @@ function defaultTeam(){return[
 let nextId={task:100,project:100,team:100};
 
 // Reminder timers per task id
-const reminderTimers = {};
+/* ══════════════════════════════════════════════
+   NOTIFICATION & REMINDER SYSTEM
+   - Browser push notifications
+   - In-app banner cards
+   - Email via EmailJS
+   - SMS via email-to-SMS gateway
+══════════════════════════════════════════════ */
 
+/* ── Config (persisted in localStorage) ── */
+let NOTIF_PREFS = {
+  browser: true,
+  banner:  true,
+  email:   false,
+  sms:     false
+};
+let NOTIF_CONFIG = {
+  ejsPublicKey: '',
+  ejsServiceId: '',
+  ejsTemplateId: '',
+  toEmail: '',
+  toSms: ''
+};
+/* Default reminder intervals in hours before due */
+let REMINDER_INTERVALS = [0, 1, 24, 48, 168]; // now, 1h, 1d, 2d, 1w
+
+function loadNotifSettings(){
+  try{
+    const p = localStorage.getItem('pah_notif_prefs');
+    if(p) NOTIF_PREFS = {...NOTIF_PREFS, ...JSON.parse(p)};
+    const cfg = localStorage.getItem('pah_notif_config');
+    if(cfg) NOTIF_CONFIG = {...NOTIF_CONFIG, ...JSON.parse(cfg)};
+    const ri = localStorage.getItem('pah_reminder_intervals');
+    if(ri) REMINDER_INTERVALS = JSON.parse(ri);
+  }catch(e){}
+}
+
+function saveNotifConfig(){
+  NOTIF_CONFIG.ejsPublicKey  = document.getElementById('ejs-pubkey')?.value.trim()||'';
+  NOTIF_CONFIG.ejsServiceId  = document.getElementById('ejs-service')?.value.trim()||'';
+  NOTIF_CONFIG.ejsTemplateId = document.getElementById('ejs-template')?.value.trim()||'';
+  NOTIF_CONFIG.toEmail       = document.getElementById('ejs-email')?.value.trim()||'';
+  NOTIF_CONFIG.toSms         = document.getElementById('ejs-sms')?.value.trim()||'';
+  localStorage.setItem('pah_notif_config', JSON.stringify(NOTIF_CONFIG));
+  localStorage.setItem('pah_notif_prefs', JSON.stringify(NOTIF_PREFS));
+  const st = document.getElementById('ejs-status');
+  if(st){ st.style.display='block'; st.style.color='var(--green)'; st.textContent='✅ Notification config saved!'; setTimeout(()=>st.style.display='none',3000); }
+  setupTaskReminders();
+  toast('✅ Notification settings saved');
+}
+
+function toggleNotifPref(type, el){
+  el.classList.toggle('on');
+  NOTIF_PREFS[type] = el.classList.contains('on');
+  localStorage.setItem('pah_notif_prefs', JSON.stringify(NOTIF_PREFS));
+  if(type==='browser' && NOTIF_PREFS.browser) requestNotificationPermission();
+}
+
+function populateNotifSettings(){
+  const set = (id, val) => { const el=document.getElementById(id); if(el) el.value=val||''; };
+  set('ejs-pubkey',   NOTIF_CONFIG.ejsPublicKey);
+  set('ejs-service',  NOTIF_CONFIG.ejsServiceId);
+  set('ejs-template', NOTIF_CONFIG.ejsTemplateId);
+  set('ejs-email',    NOTIF_CONFIG.toEmail);
+  set('ejs-sms',      NOTIF_CONFIG.toSms);
+  const tog = (id, val) => { const el=document.getElementById(id); if(el){ el.classList.toggle('on', val); } };
+  tog('toggle-browser-notif', NOTIF_PREFS.browser);
+  tog('toggle-banner-notif',  NOTIF_PREFS.banner);
+  tog('toggle-email-notif',   NOTIF_PREFS.email);
+  tog('toggle-sms-notif',     NOTIF_PREFS.sms);
+  renderReminderSchedule();
+}
+
+/* ── Reminder interval editor ── */
+const INTERVAL_LABELS = {0:'At due time', 1:'1 hour before', 2:'2 hours before', 3:'3 hours before',
+  6:'6 hours before', 12:'12 hours before', 24:'1 day before', 48:'2 days before',
+  72:'3 days before', 168:'1 week before', 336:'2 weeks before'};
+
+function renderReminderSchedule(){
+  const el = document.getElementById('reminder-schedule-list');
+  if(!el) return;
+  el.innerHTML = REMINDER_INTERVALS.map((h,i)=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border2)">
+      <select class="modal-input" style="flex:1" onchange="updateReminderInterval(${i},this.value)">
+        ${Object.entries(INTERVAL_LABELS).map(([v,l])=>`<option value="${v}" ${parseInt(h)===parseInt(v)?'selected':''}>${l}</option>`).join('')}
+      </select>
+      <button class="btn btn-danger btn-sm" onclick="removeReminderInterval(${i})">✕</button>
+    </div>`).join('');
+}
+
+function addReminderInterval(){
+  REMINDER_INTERVALS.push(24);
+  localStorage.setItem('pah_reminder_intervals', JSON.stringify(REMINDER_INTERVALS));
+  renderReminderSchedule();
+  setupTaskReminders();
+}
+
+function removeReminderInterval(i){
+  REMINDER_INTERVALS.splice(i,1);
+  localStorage.setItem('pah_reminder_intervals', JSON.stringify(REMINDER_INTERVALS));
+  renderReminderSchedule();
+  setupTaskReminders();
+}
+
+function updateReminderInterval(i, val){
+  REMINDER_INTERVALS[i] = parseInt(val);
+  localStorage.setItem('pah_reminder_intervals', JSON.stringify(REMINDER_INTERVALS));
+  setupTaskReminders();
+}
+
+/* ── Browser push ── */
 function requestNotificationPermission(){
   if(!('Notification' in window)) return;
-  if(Notification.permission==='default') Notification.requestPermission();
-}
-
-function notify(title, body){
-  if('Notification' in window && Notification.permission==='granted'){
-    new Notification(title,{body,icon:'',silent:false});
-  } else {
-    toast(`🔔 ${title}: ${body}`);
+  if(Notification.permission==='default'){
+    Notification.requestPermission().then(p=>{
+      if(p==='granted') toast('✅ Browser notifications enabled');
+      else toast('⚠️ Browser notifications blocked');
+    });
   }
 }
+
+function sendBrowserNotif(title, body, urgency='info'){
+  if(!NOTIF_PREFS.browser) return;
+  if(!('Notification' in window)) return;
+  if(Notification.permission==='granted'){
+    const n = new Notification(title,{body, icon:'pah-icon-192.png', badge:'pah-icon-192.png', silent:false, tag:title});
+    n.onclick = ()=>{ window.focus(); n.close(); };
+  }
+}
+
+/* ── In-app banner ── */
+function showBanner(title, msg, urgency='info', taskId=null){
+  if(!NOTIF_PREFS.banner) return;
+  const el = document.getElementById('notif-banner');
+  if(!el) return;
+  const id = 'nb_'+Date.now();
+  const card = document.createElement('div');
+  card.className = `notif-card ${urgency}`;
+  card.id = id;
+  const icon = urgency==='urgent'?'🚨':urgency==='warning'?'⚠️':'🔔';
+  card.innerHTML = `
+    <div class="notif-icon">${icon}</div>
+    <div class="notif-body">
+      <div class="notif-title">${title}</div>
+      <div class="notif-msg">${msg}</div>
+      ${taskId?`<span class="notif-dismiss" onclick="goTo('tasks')">View tasks →</span>`:''}
+    </div>
+    <button class="notif-close" onclick="dismissBanner('${id}')">✕</button>`;
+  el.appendChild(card);
+  // Auto-dismiss after 8 seconds
+  setTimeout(()=>dismissBanner(id), 8000);
+}
+
+function dismissBanner(id){
+  const el = document.getElementById(id);
+  if(el){ el.style.opacity='0'; el.style.transform='translateX(40px)'; el.style.transition='all 0.3s'; setTimeout(()=>el.remove(),300); }
+}
+
+/* ── Email via EmailJS ── */
+async function sendEmailAlert(itemName, dueDate, itemType='Task', toOverride=null){
+  if(!NOTIF_PREFS.email && !toOverride) return;
+  if(!NOTIF_CONFIG.ejsPublicKey||!NOTIF_CONFIG.ejsServiceId||!NOTIF_CONFIG.ejsTemplateId) return;
+  if(!NOTIF_CONFIG.toEmail && !toOverride) return;
+  try{
+    await emailjs.init(NOTIF_CONFIG.ejsPublicKey);
+    const params = {
+      task_name:     itemName,
+      due_date:      dueDate,
+      item_type:     itemType,
+      to_email:      toOverride || NOTIF_CONFIG.toEmail
+    };
+    await emailjs.send(NOTIF_CONFIG.ejsServiceId, NOTIF_CONFIG.ejsTemplateId, params);
+    console.log('✅ Email sent for:', itemType, itemName);
+  }catch(e){
+    console.warn('EmailJS error:', e);
+  }
+}
+
+/* ── SMS via email-to-SMS gateway ── */
+async function sendSmsAlert(itemName, dueDate, itemType='Task'){
+  if(!NOTIF_PREFS.sms) return;
+  if(!NOTIF_CONFIG.toSms) return;
+  await sendEmailAlert(itemName, dueDate, itemType, NOTIF_CONFIG.toSms);
+}
+
+/* ── Master notify function ── */
+function notify(title, body, urgency='info', task=null){
+  sendBrowserNotif(title, body, urgency);
+  showBanner(title, body, urgency, task?.id);
+  if(task){
+    const due = task.due||'';
+    sendEmailAlert(task.name, due, title);
+    sendSmsAlert(task.name, due, title);
+  }
+}
+
+/* ── Test notification ── */
+async function testNotification(){
+  const st = document.getElementById('ejs-status');
+  if(st){ st.style.display='block'; st.style.color='var(--text-dim)'; st.textContent='Sending test…'; }
+  // Save config first
+  saveNotifConfig();
+  // Browser notif
+  requestNotificationPermission();
+  sendBrowserNotif('🧪 PAH Test', 'Browser notifications are working!');
+  // Banner
+  showBanner('🧪 Test Notification', 'In-app banner is working!', 'info');
+  // Email
+  if(NOTIF_PREFS.email && NOTIF_CONFIG.ejsPublicKey){
+    await sendEmailAlert('PAH Admin Test', new Date().toLocaleDateString(), 'Task');
+    if(st){ st.style.color='var(--green)'; st.textContent='✅ Test email sent! Check your inbox.'; }
+  } else {
+    if(st){ st.style.color='var(--gold)'; st.textContent='⚠️ Email disabled or not configured. Banner + browser test sent.'; }
+  }
+  // SMS
+  if(NOTIF_PREFS.sms && NOTIF_CONFIG.toSms){
+    await sendSmsAlert('PAH Admin Test', new Date().toLocaleDateString(), 'Task');
+  }
+}
+
+/* ── Reminder timers ── */
+const reminderTimers = {};
 
 function clearTaskReminders(taskId){
   if(!reminderTimers[taskId]) return;
@@ -1530,29 +1803,44 @@ function clearTaskReminders(taskId){
 function scheduleTaskReminders(task){
   clearTaskReminders(task.id);
   if(!task.due) return;
-  const due = new Date(task.due);
+  const due = new Date(task.due + 'T09:00:00'); // fire at 9am on due day
   if(isNaN(due)) return;
   const now = Date.now();
-  const schedule = [
-    {label:'Due now', offset:0},
-    {label:'Due in 1 day', offset:24*60*60*1000},
-    {label:'Due in 2 days', offset:2*24*60*60*1000},
-    {label:'Due in 1 week', offset:7*24*60*60*1000},
-  ];
-  reminderTimers[task.id]=[];
-  schedule.forEach(({label,offset})=>{
-    const when = due.getTime() - offset;
+  reminderTimers[task.id] = [];
+  REMINDER_INTERVALS.forEach(hours=>{
+    const when = due.getTime() - (hours * 60 * 60 * 1000);
     const delay = when - now;
-    if(delay<=0) return; // past
+    if(delay <= 0) return; // already past
+    const label = INTERVAL_LABELS[hours] || `${hours}h before`;
+    const urgency = hours===0?'urgent':hours<=2?'warning':'info';
     const timer = setTimeout(()=>{
-      // Only notify if task still exists and due still matches
       const current = TASKS.find(t=>t.id===task.id);
-      if(!current) return;
-      if(current.due!==task.due) return; // due changed
-      if(current.done) return; // skip done
-      notify(`Task reminder`, `${task.name} — ${label}`);
+      if(!current || current.done || current.due!==task.due) return;
+      notify(`Task Due: ${task.name}`, `${label} — due ${task.due}`, urgency, current, 'Task');
     }, delay);
     reminderTimers[task.id].push(timer);
+  });
+}
+
+function scheduleProjectReminders(project){
+  clearTaskReminders('proj_'+project.id);
+  if(!project.due) return;
+  const due = new Date(project.due + 'T09:00:00');
+  if(isNaN(due)) return;
+  const now = Date.now();
+  reminderTimers['proj_'+project.id] = [];
+  REMINDER_INTERVALS.forEach(hours=>{
+    const when = due.getTime() - (hours * 60 * 60 * 1000);
+    const delay = when - now;
+    if(delay <= 0) return;
+    const label = INTERVAL_LABELS[hours] || `${hours}h before`;
+    const urgency = hours===0?'urgent':hours<=2?'warning':'info';
+    const timer = setTimeout(()=>{
+      const current = PROJECTS.find(p=>p.id===project.id);
+      if(!current || current.status==='done' || current.due!==project.due) return;
+      notify(`Project Due: ${project.name}`, `${label} — due ${project.due}`, urgency, current, 'Project');
+    }, delay);
+    reminderTimers['proj_'+project.id].push(timer);
   });
 }
 
@@ -1560,6 +1848,7 @@ function setupTaskReminders(){
   requestNotificationPermission();
   Object.keys(reminderTimers).forEach(id=>clearTaskReminders(id));
   TASKS.forEach(t=>{ if(!t.done) scheduleTaskReminders(t); });
+  PROJECTS.forEach(p=>{ if(p.status!=='done') scheduleProjectReminders(p); });
 }
 
 /* ══ INIT ══ */
@@ -1577,6 +1866,7 @@ function migrateTasks(){
 
 window.addEventListener('DOMContentLoaded',async()=>{
   loadData();          // load localStorage as immediate fallback
+  loadNotifSettings(); // load notification prefs
   migrateTasks();      // migrate old data format
   await initDefaultUsers(); // ensure built-in user exists
 
@@ -1814,7 +2104,7 @@ function goTo(page){
   if(newBn) newBn.classList.add('active');
   if(page==='onedrive') syncFullOdView();
   if(page==='reports') renderReports();
-  if(page==='settings'){ renderTaskStatusList(); renderUsersList(); loadUsersFromGitHub().then(renderUsersList); }
+  if(page==='settings'){ renderTaskStatusList(); renderUsersList(); loadUsersFromGitHub().then(renderUsersList); populateNotifSettings(); }
   closeSidebar();
 }
 
@@ -2451,19 +2741,4 @@ function toast(msg){const e=document.getElementById('toast');e.textContent=msg;e
       <div class="bn-item-wrap"><span class="bn-icon">&#9989;</span><span class="bn-badge" id="bnb-tasks">0</span></div>
       <span class="bn-label">Tasks</span>
     </button>
-    <button class="bn-item" id="bn-projects" onclick="goTo('projects');closeSidebar()">
-      <div class="bn-item-wrap"><span class="bn-icon">&#128203;</span></div>
-      <span class="bn-label">Projects</span>
-    </button>
-    <button class="bn-item" id="bn-team" onclick="goTo('team');closeSidebar()">
-      <div class="bn-item-wrap"><span class="bn-icon">&#128101;</span></div>
-      <span class="bn-label">Team</span>
-    </button>
-    <button class="bn-item" id="bn-onedrive" onclick="goTo('onedrive');closeSidebar()">
-      <div class="bn-item-wrap"><span class="bn-icon">&#9729;&#65039;</span></div>
-      <span class="bn-label">Drive</span>
-    </button>
-  </div>
-</div>
-</body>
-</html>
+    <button class="bn-item" id="bn-projects" onclick="goTo('projects');closeSid
