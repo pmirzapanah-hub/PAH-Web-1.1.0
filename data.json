@@ -91,5 +91,21 @@
       "role": "admin"
     }
   ],
-  "savedAt": "2026-03-15T19:59:41.121Z"
+  "notifConfig": {
+    "ejsPublicKey": "_jGG32y7F5ImwYr1m",
+    "ejsServiceId": "VIP Due date reminder",
+    "ejsTemplateId": "Due date approaching",
+    "toEmail": "",
+    "toSms": "0403741854@voda.net.au"
+  },
+  "notifPrefs": {
+    "browser": true,
+    "banner": true,
+    "email": true,
+    "sms": true
+  },
+  "reminderIntervals": [
+    1
+  ],
+  "savedAt": "2026-03-15T20:15:39.051Z"
 }
