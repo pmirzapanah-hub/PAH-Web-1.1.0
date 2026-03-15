@@ -887,11 +887,13 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
           <div class="settings-group">
             <label>Personal Access Token</label>
             <div style="display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap:wrap">
-              <span id="gh-token-status">Not set</span></div>
-              <button class="btn btn-primary btn-sm" onclick="document.getElementById('pw-modal').classList.add('open');document.getElementById('pw-input').value='';setTimeout(()=>document.getElementById('pw-input').focus(),100)">🔑 Enter Password</button>
-              <button class="btn btn-danger btn-sm" onclick="clearGhToken()">Clear</button>
+              <span id="gh-token-status">Not set</span>
+              <span id="gh-admin-btns">
+                <button class="btn btn-primary btn-sm" onclick="document.getElementById('pw-modal').classList.add('open');document.getElementById('pw-input').value='';setTimeout(()=>document.getElementById('pw-input').focus(),100)">🔑 Enter Password</button>
+                <button class="btn btn-danger btn-sm" onclick="clearGhToken()">Clear</button>
+              </span>
             </div>
-            <p style="font-size:0.72rem;color:var(--text-dim);margin-top:10px;line-height:1.6">Your token is <strong style="color:var(--text)">encrypted with AES-256</strong> and embedded in the file. Enter your password once per browser session to unlock GitHub sync. The raw token is never visible in the source code.</p>
+            <p id="gh-token-desc" style="font-size:0.72rem;color:var(--text-dim);margin-top:10px;line-height:1.6">Your token is <strong style="color:var(--text)">encrypted with AES-256</strong> and embedded in the file. Enter your password once per browser session to unlock GitHub sync. The raw token is never visible in the source code.</p>
           </div>
         </div>
       </div>
@@ -1668,6 +1670,10 @@ function populateProfileSettings(){
     show('settings-task-statuses', true);
     show('user-accounts-section',  true);
     show('settings-github',        true);
+    const adminBtns = document.getElementById('gh-admin-btns');
+    const tokenDesc = document.getElementById('gh-token-desc');
+    if(adminBtns) adminBtns.style.display = '';
+    if(tokenDesc) tokenDesc.style.display = '';
     return;
   }
 
@@ -1678,22 +1684,28 @@ function populateProfileSettings(){
     show('settings-reminders',     false);
     show('settings-onedrive',      true);
     show('settings-task-statuses', true);
-    show('user-accounts-section',  true);  // can add manager/viewer accounts
+    show('user-accounts-section',  true);
     show('settings-github',        true);
-    // restrict user accounts — managers can only add manager or viewer
-    const addBtn = document.getElementById('add-user-btn');
-    if(addBtn) addBtn.style.display = 'inline-flex';
+    const adminBtns = document.getElementById('gh-admin-btns');
+    const tokenDesc = document.getElementById('gh-token-desc');
+    if(adminBtns) adminBtns.style.display = '';
+    if(tokenDesc) tokenDesc.style.display = '';
     return;
   }
 
-  // viewer — only Profile + GitHub token status
+  // viewer — only Profile + GitHub token status (read-only)
   show('settings-preferences',   false);
   show('emailjs-config-section', false);
   show('settings-reminders',     false);
   show('settings-onedrive',      false);
   show('settings-task-statuses', false);
   show('user-accounts-section',  false);
-  show('settings-github',        true);  // so viewers can see token status
+  show('settings-github',        true);
+  // hide the Enter Password / Clear buttons for viewers — status only
+  const adminBtns = document.getElementById('gh-admin-btns');
+  const tokenDesc = document.getElementById('gh-token-desc');
+  if(adminBtns) adminBtns.style.display = 'none';
+  if(tokenDesc) tokenDesc.style.display = 'none';
 }
 
 function saveProfileSettings(){
