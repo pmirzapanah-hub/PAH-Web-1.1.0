@@ -8,13 +8,6 @@
       "due": "2026-03-09"
     },
     {
-      "id": 3,
-      "name": "Update project timeline",
-      "done": false,
-      "pri": "m",
-      "due": "2026-03-10"
-    },
-    {
       "id": 4,
       "name": "Schedule team stand-up",
       "done": true,
@@ -109,5 +102,5 @@
       "role": "manager"
     }
   ],
-  "savedAt": "2026-03-15T00:39:31.082Z"
+  "savedAt": "2026-03-15T00:39:35.294Z"
 }
