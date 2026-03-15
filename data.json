@@ -27,13 +27,6 @@
       "done": true,
       "pri": "l",
       "due": "2026-03-09"
-    },
-    {
-      "id": 5,
-      "name": "Prepare compliance checklist",
-      "done": false,
-      "pri": "m",
-      "due": "2026-03-11"
     }
   ],
   "projects": [
@@ -123,5 +116,5 @@
       "role": "manager"
     }
   ],
-  "savedAt": "2026-03-15T00:39:23.487Z"
+  "savedAt": "2026-03-15T00:39:26.762Z"
 }
