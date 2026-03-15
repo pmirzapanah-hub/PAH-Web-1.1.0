@@ -1191,7 +1191,7 @@ function renderUsersList(){
 }
 
 function openAddUserModal(){
-  const isAdmin = currentUser?.username === 'VIP-Cabinets' && (currentUser?.role||'').toLowerCase() === 'admin';
+  const isAdmin = (currentUser?.role||'').toLowerCase() === 'admin';
   const roleSelect = document.getElementById('new-user-role');
   if(roleSelect){
     roleSelect.innerHTML = isAdmin
@@ -1645,7 +1645,7 @@ function populateProfileSettings(){
 
   const u = USERS.find(x => x.username.toLowerCase() === currentUser.username.toLowerCase()) || currentUser;
   const role = (u.role || currentUser.role || '').toLowerCase();
-  const isAdmin   = currentUser.username === 'VIP-Cabinets' && role === 'admin';
+  const isAdmin   = role === 'admin';
   const isManager = role === 'manager';
   const isViewer  = !isAdmin && !isManager;
 
@@ -1661,7 +1661,7 @@ function populateProfileSettings(){
     if(el) el.style.display = visible ? '' : 'none';
   };
 
-  // admin (VIP-Cabinets) — everything visible
+  // admin role — full access
   if(isAdmin){
     show('settings-preferences',   true);
     show('emailjs-config-section', true);
