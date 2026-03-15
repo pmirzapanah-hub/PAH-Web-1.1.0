@@ -94,12 +94,7 @@
       "username": "pooya1",
       "passwordHash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
       "role": "manager"
-    },
-    {
-      "username": "pooya2",
-      "passwordHash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
-      "role": "admin"
     }
   ],
-  "savedAt": "2026-03-15T07:21:34.176Z"
+  "savedAt": "2026-03-15T09:16:32.325Z"
 }
