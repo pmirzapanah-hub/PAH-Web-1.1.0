@@ -95,7 +95,7 @@
     "ejsPublicKey": "_jGG32y7F5ImwYr1m",
     "ejsServiceId": "VIP Due date reminder",
     "ejsTemplateId": "Due date approaching",
-    "toEmail": "",
+    "toEmail": "p.mirzapanah@gmail.com",
     "toSms": "0403741854@voda.net.au"
   },
   "notifPrefs": {
@@ -107,5 +107,5 @@
   "reminderIntervals": [
     1
   ],
-  "savedAt": "2026-03-15T20:15:39.051Z"
+  "savedAt": "2026-03-15T20:29:36.415Z"
 }
