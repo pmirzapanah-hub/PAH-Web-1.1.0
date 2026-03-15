@@ -783,18 +783,24 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
       <div class="page-body">
         <div class="page-section"><div class="page-section-head"><h3>Profile</h3></div>
           <div class="settings-group">
-            <label>Display Name</label><input class="modal-input" type="text" id="set-name" value="Admin User"/>
-            <label>Email</label><input class="modal-input" type="text" id="set-email" placeholder="your@email.com"/>
-            <label>Role</label><select class="modal-input"><option>Administrator</option><option>Project Manager</option><option>Viewer</option></select>
-            <div style="margin-top:16px">
+            <label>Username</label>
+            <input class="modal-input" type="text" id="set-name" readonly style="opacity:0.6;cursor:default"/>
+            <label>Role</label>
+            <input class="modal-input" type="text" id="set-role" readonly style="opacity:0.6;cursor:default"/>
+            <label>Display Name</label>
+            <input class="modal-input" type="text" id="set-displayname" placeholder="Your display name"/>
+            <label>Email <span style="font-size:0.75rem;color:var(--text-dim)">(used for notifications)</span></label>
+            <input class="modal-input" type="email" id="set-email" placeholder="your@email.com"/>
+            <button class="btn btn-primary" style="margin-top:14px" onclick="saveProfileSettings()">Save Changes</button>
+            <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border2)">
               <label style="display:block;margin-bottom:6px">Change Password</label>
-              <div style="display:flex;gap:10px;align-items:center">
-                <input class="modal-input" type="password" id="set-password" placeholder="New password…" style="flex:1"/>
+              <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px">
+                <input class="modal-input" type="password" id="set-password" placeholder="New password (min 6 chars)…" style="flex:1"/>
                 <button class="btn btn-ghost btn-sm" type="button" onclick="toggleSettingPassword(this)" style="white-space:nowrap">Show</button>
               </div>
+              <input class="modal-input" type="password" id="set-password-confirm" placeholder="Confirm new password…"/>
             </div>
-            <button class="btn btn-primary" style="margin-top:14px" onclick="changeMyPassword()">Change Password</button>
-            <button class="btn btn-primary" style="margin-top:14px" onclick="toast('✅ Profile saved')">Save Changes</button>
+            <button class="btn btn-primary" style="margin-top:10px" onclick="changeMyPassword()">💾 Change Password</button>
           </div>
         </div>
         <div class="page-section"><div class="page-section-head"><h3>Preferences</h3></div>
@@ -1357,17 +1363,20 @@ function toggleSettingPassword(btn){
 }
 
 async function changeMyPassword(){
-  const pw=document.getElementById('set-password')?.value;
-  if(!pw||pw.length<6){ toast('⚠️ Password must be 6+ characters'); return; }
+  const pw = document.getElementById('set-password')?.value.trim();
+  const confirmEl = document.getElementById('set-password-confirm');
+  if(!pw || pw.length < 6){ toast('⚠️ Password must be at least 6 characters'); return; }
+  if(confirmEl && confirmEl.value && confirmEl.value !== pw){
+    toast('⚠️ Passwords do not match'); return;
+  }
   if(!currentUser){ toast('⚠️ Not signed in'); return; }
-  const username=currentUser.username;
-  const all=USERS;
-  const u=all.find(x=>x.username===username);
+  const u = USERS.find(x => x.username === currentUser.username);
   if(!u){ toast('⚠️ User not found'); return; }
-  u.passwordHash=await sha256(pw);
-  if(!u.builtIn) await saveUsersToGitHub();
-  document.getElementById('set-password').value='';
-  toast('✅ Password updated');
+  u.passwordHash = await sha256(pw);
+  await save(); // saves to localStorage + pushes to GitHub
+  document.getElementById('set-password').value = '';
+  if(confirmEl) confirmEl.value = '';
+  toast('✅ Password updated — takes effect on next login');
 }
 
 const ENCRYPTED_TOKEN = {"salt": "6TSXf13ZpQ5pOSINzIb7yw==", "iv": "PrdkkIu7kvWC8HNl", "data": "PtTsgVIviqm2Iyy5fHQM+L9ha86qEezz8uTAqxamSys4I22yMSbfmORpJ55wn2EZ1uzh4kKIZKg="};
@@ -1593,6 +1602,40 @@ function toggleNotifPref(type, el){
   NOTIF_PREFS[type] = el.classList.contains('on');
   localStorage.setItem('pah_notif_prefs', JSON.stringify(NOTIF_PREFS));
   if(type==='browser' && NOTIF_PREFS.browser) requestNotificationPermission();
+}
+
+function populateProfileSettings(){
+  if(!currentUser) return;
+  const u = USERS.find(x => x.username === currentUser.username);
+  if(!u) return;
+  const nameEl = document.getElementById('set-name');
+  const roleEl = document.getElementById('set-role');
+  const displayEl = document.getElementById('set-displayname');
+  const emailEl = document.getElementById('set-email');
+  if(nameEl) nameEl.value = u.username || '';
+  if(roleEl) roleEl.value = u.role || '';
+  if(displayEl) displayEl.value = u.displayName || u.username || '';
+  if(emailEl) emailEl.value = u.email || NOTIF_CONFIG.toEmail || '';
+}
+
+function saveProfileSettings(){
+  if(!currentUser) return;
+  const u = USERS.find(x => x.username === currentUser.username);
+  if(!u){ toast('User not found'); return; }
+  const displayName = document.getElementById('set-displayname')?.value.trim();
+  const email = document.getElementById('set-email')?.value.trim();
+  if(displayName) u.displayName = displayName;
+  if(email){
+    u.email = email;
+    // also sync to notification config so emails go to right address
+    NOTIF_CONFIG.toEmail = email;
+    localStorage.setItem('pah_notif_config', JSON.stringify(NOTIF_CONFIG));
+    // update the emailjs field too if visible
+    const ejsEmail = document.getElementById('ejs-email');
+    if(ejsEmail) ejsEmail.value = email;
+  }
+  save();
+  toast('✅ Profile saved');
 }
 
 function populateNotifSettings(){
@@ -2057,7 +2100,7 @@ function goTo(page){
   if(newBn) newBn.classList.add('active');
   if(page==='onedrive') syncFullOdView();
   if(page==='reports') renderReports();
-  if(page==='settings'){ renderTaskStatusList(); renderUsersList(); loadUsersFromGitHub().then(renderUsersList); populateNotifSettings(); updateGhTokenUI(); }
+  if(page==='settings'){ renderTaskStatusList(); renderUsersList(); loadUsersFromGitHub().then(renderUsersList); populateNotifSettings(); populateProfileSettings(); updateGhTokenUI(); }
   closeSidebar();
 }
 
