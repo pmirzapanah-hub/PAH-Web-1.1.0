@@ -1,13 +1,6 @@
 {
   "tasks": [
     {
-      "id": 1,
-      "name": "Review Q1 budget report",
-      "done": true,
-      "pri": "h",
-      "due": "2026-03-09"
-    },
-    {
       "id": 4,
       "name": "Schedule team stand-up",
       "done": true,
@@ -102,5 +95,5 @@
       "role": "manager"
     }
   ],
-  "savedAt": "2026-03-15T00:39:35.294Z"
+  "savedAt": "2026-03-15T00:39:40.170Z"
 }
