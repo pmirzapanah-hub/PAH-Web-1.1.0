@@ -83,13 +83,6 @@
       "role": "Manager",
       "status": "online",
       "color": "#2e7d32"
-    },
-    {
-      "id": 3,
-      "name": "Clara Lee",
-      "role": "Designer",
-      "status": "away",
-      "color": "#e65100"
     }
   ],
   "taskStatuses": [
@@ -136,5 +129,5 @@
       "role": "manager"
     }
   ],
-  "savedAt": "2026-03-15T00:38:04.814Z"
+  "savedAt": "2026-03-15T00:38:19.719Z"
 }
