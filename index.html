@@ -1156,7 +1156,7 @@ function renderUsersList(){
   const isViewer=role==='viewer';
 
   const addBtn=document.getElementById('add-user-btn');
-  if(addBtn){ addBtn.style.display = isAdmin ? 'inline-flex' : 'none'; }
+  if(addBtn){ addBtn.style.display = (isAdmin || isManager) ? 'inline-flex' : 'none'; }
 
   const allUsers=USERS;
   el.innerHTML=allUsers.map((u,i)=>{
@@ -1196,7 +1196,8 @@ function openAddUserModal(){
       ? '<option value="admin">Admin</option><option value="manager">Manager</option><option value="viewer">Viewer</option>'
       : '<option value="manager">Manager</option><option value="viewer">Viewer</option>';
   }
-  if(currentUser?.role!=='admin'){ toast('⚠️ Only admins can add users'); return; }
+  const canAdd = isAdmin || (currentUser?.role||'').toLowerCase() === 'manager';
+  if(!canAdd){ toast('⚠️ Only admins and managers can add users'); return; }
   document.getElementById('user-modal-title').textContent='Add User';
   document.getElementById('user-modal-icon').textContent='👤';
   document.getElementById('user-edit-idx').value='';
@@ -1268,7 +1269,13 @@ async function saveUser(){
   const isViewer = currentRole==='viewer';
 
   if(!username){ toast('⚠️ Username required'); return; }
-  if(!isEdit && !isAdmin){ toast('⚠️ Only admins can add users'); return; }
+  const canAdd = isAdmin || isManager;
+  if(!isEdit && !canAdd){ toast('⚠️ Only admins and managers can add users'); return; }
+  // managers can only assign manager or viewer roles
+  if(!isAdmin && isManager){
+    const chosenRole = (document.getElementById('new-user-role')?.value||'').toLowerCase();
+    if(chosenRole === 'admin'){ toast('⚠️ Managers cannot create admin accounts'); return; }
+  }
   if(!isEdit && !password){ toast('⚠️ Password required'); return; }
   if(password && password.length<6){ toast('⚠️ Password must be 6+ characters'); return; }
 
@@ -2461,9 +2468,7 @@ async function afterSignIn(account){
   try{
     const me=await gGet('https://graph.microsoft.com/v1.0/me');
     const name=me.displayName||me.userPrincipalName||account.name||'User';
-    const ini=name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-    document.getElementById('user-name').textContent=name;
-    document.getElementById('user-avatar').textContent=ini;
+    // only update OneDrive-specific fields — do NOT overwrite the PAH login name
     document.getElementById('od-account-lbl').textContent=`${me.userPrincipalName||name} — active until sign-out`;
     document.getElementById('sf-account-lbl').textContent=`${me.userPrincipalName||name} — active until sign-out`;
     const sp=document.getElementById('set-od-pill');sp.className='status-pill on';sp.style.cursor='default';
@@ -2477,7 +2482,8 @@ async function msalSignOut(){
   token=null;const accounts=msalApp?.getAllAccounts()||[];
   if(accounts.length)await msalApp.logoutPopup({account:accounts[0]}).catch(()=>{});
   setPill(false);document.getElementById('sidebar-od-label').textContent='Connect OneDrive';
-  document.getElementById('user-name').textContent='Admin';document.getElementById('user-avatar').textContent='AD';
+  // restore PAH login user name (not OneDrive name)
+  if(currentUser){ document.getElementById('user-name').textContent=currentUser.username; document.getElementById('user-avatar').textContent=currentUser.username.slice(0,2).toUpperCase(); }
   document.getElementById('kpi-files').textContent='–';document.getElementById('kpi-files-sub').textContent='Not connected';
   const sp=document.getElementById('set-od-pill');sp.className='status-pill off';document.getElementById('set-od-status').textContent='Disconnected';
   setState('connect');syncFullOdView();toast('🔓 Signed out of OneDrive');
