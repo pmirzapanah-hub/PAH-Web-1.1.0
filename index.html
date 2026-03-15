@@ -1625,6 +1625,11 @@ function loadNotifSettings(){
     const ri = localStorage.getItem('pah_reminder_intervals');
     if(ri) REMINDER_INTERVALS = JSON.parse(ri);
   }catch(e){}
+  // if localStorage was empty but GitHub already loaded data into NOTIF_CONFIG,
+  // write it back so future loads are instant
+  if(NOTIF_CONFIG.ejsPublicKey){
+    localStorage.setItem('pah_notif_config', JSON.stringify(NOTIF_CONFIG));
+  }
 }
 
 function saveNotifConfig(){
@@ -1986,7 +1991,16 @@ window.addEventListener('DOMContentLoaded',async()=>{
       localStorage.setItem('pah_team',JSON.stringify(TEAM));
       localStorage.setItem('pah_task_statuses',JSON.stringify(TASK_STATUSES));
       localStorage.setItem('pah_users',JSON.stringify(USERS));
+      localStorage.setItem('pah_notif_config',JSON.stringify(NOTIF_CONFIG));
+      localStorage.setItem('pah_notif_prefs',JSON.stringify(NOTIF_PREFS));
+      localStorage.setItem('pah_reminder_intervals',JSON.stringify(REMINDER_INTERVALS));
       renderAll(); setupTaskReminders();
+      // if settings page is open, refresh its fields with the newly loaded data
+      if(currentPage === 'settings'){
+        populateNotifSettings();
+        populateProfileSettings();
+        renderReminderSchedule();
+      }
     }
   } else {
     renderAll(); 
@@ -2203,7 +2217,7 @@ function goTo(page){
   if(newBn) newBn.classList.add('active');
   if(page==='onedrive') syncFullOdView();
   if(page==='reports') renderReports();
-  if(page==='settings'){ renderTaskStatusList(); renderUsersList(); loadUsersFromGitHub().then(()=>{ renderUsersList(); populateProfileSettings(); }); populateNotifSettings(); populateProfileSettings(); updateGhTokenUI(); }
+  if(page==='settings'){ renderTaskStatusList(); renderUsersList(); populateNotifSettings(); populateProfileSettings(); renderReminderSchedule(); updateGhTokenUI(); loadUsersFromGitHub().then(()=>{ renderUsersList(); populateProfileSettings(); populateNotifSettings(); renderReminderSchedule(); }); }
   closeSidebar();
 }
 
