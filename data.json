@@ -1,13 +1,5 @@
 {
-  "tasks": [
-    {
-      "id": 4,
-      "name": "Schedule team stand-up",
-      "done": true,
-      "pri": "l",
-      "due": "2026-03-09"
-    }
-  ],
+  "tasks": [],
   "projects": [
     {
       "id": 1,
@@ -95,5 +87,5 @@
       "role": "manager"
     }
   ],
-  "savedAt": "2026-03-15T00:39:40.170Z"
+  "savedAt": "2026-03-15T00:39:43.746Z"
 }
