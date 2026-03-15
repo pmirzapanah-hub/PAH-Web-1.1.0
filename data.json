@@ -61,14 +61,6 @@
       "due": "2026-03-15"
     },
     {
-      "id": 3,
-      "name": "Data Migration",
-      "desc": "Legacy system transfer",
-      "progress": 60,
-      "status": "in-progress",
-      "due": "2026-04-01"
-    },
-    {
       "id": 4,
       "name": "Compliance Audit",
       "desc": "Annual review prep",
@@ -134,5 +126,5 @@
       "builtIn": true
     }
   ],
-  "savedAt": "2026-03-14T01:14:56.177Z"
+  "savedAt": "2026-03-15T00:37:21.208Z"
 }
