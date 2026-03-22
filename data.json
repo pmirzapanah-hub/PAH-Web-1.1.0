@@ -1,5 +1,54 @@
 {
-  "tasks": [],
+  "tasks": [
+    {
+      "id": 1,
+      "name": "Review Q1 budget report",
+      "done": true,
+      "pri": "h",
+      "due": "2026-03-09",
+      "status": "done"
+    },
+    {
+      "id": 2,
+      "name": "Send stakeholder update",
+      "done": false,
+      "pri": "h",
+      "due": "2026-03-09",
+      "status": "pending"
+    },
+    {
+      "id": 3,
+      "name": "Update project timeline",
+      "done": false,
+      "pri": "m",
+      "due": "2026-03-10",
+      "status": "pending"
+    },
+    {
+      "id": 4,
+      "name": "Schedule team stand-up",
+      "done": true,
+      "pri": "l",
+      "due": "2026-03-09",
+      "status": "done"
+    },
+    {
+      "id": 5,
+      "name": "Prepare compliance checklist",
+      "done": false,
+      "pri": "m",
+      "due": "2026-03-11",
+      "status": "pending"
+    },
+    {
+      "id": 6,
+      "name": "Archive sprint files",
+      "done": false,
+      "pri": "l",
+      "due": "2026-03-12",
+      "status": "pending"
+    }
+  ],
   "projects": [
     {
       "id": 1,
@@ -91,21 +140,5 @@
       "role": "admin"
     }
   ],
-  "notifConfig": {
-    "ejsPublicKey": "_jGG32y7F5ImwYr1m",
-    "ejsServiceId": "VIP Due date reminder",
-    "ejsTemplateId": "Due date approaching",
-    "toEmail": "p.mirzapanah@gmail.com",
-    "toSms": "0403741854@voda.net.au"
-  },
-  "notifPrefs": {
-    "browser": true,
-    "banner": true,
-    "email": true,
-    "sms": true
-  },
-  "reminderIntervals": [
-    1
-  ],
-  "savedAt": "2026-03-15T20:29:36.415Z"
+  "savedAt": "2026-03-22T02:01:16.441Z"
 }
